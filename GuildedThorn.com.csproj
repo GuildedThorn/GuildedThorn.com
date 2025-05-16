@@ -42,7 +42,6 @@
   <ItemGroup>
     <Folder Include="GuildedThorn.com-Frontend\public\files\" />
     <Folder Include="GuildedThorn.com-Frontend\public\posts\" />
-    <Folder Include="GuildedThorn.com-Frontend\src\backend\" />
   </ItemGroup>
 
 </Project>

@@ -16,9 +16,9 @@ createRoot(document.getElementById('root')!).render(
             {/* Place NavBar inside BrowserRouter */}
             <NavBar />
             <Routes>
-                <Route path={"/"} element={<App />} />
-                <Route path={"/about"} element={<About />} />
-                <Route path={"/radio"} element={<Radio />} />
+                <Route path={"/"} element={<App/>}/>
+                <Route path={"/about"} element={<About/>}/>
+                <Route path={"/radio"} element={<Radio/>}/>
             </Routes>
         </BrowserRouter>
     </StrictMode>
