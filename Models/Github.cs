@@ -1,6 +1,13 @@
 namespace GuildedThorn.com.Models;
 
-public class Github {
+
+//https://api.github.com/users/GuildedThorn
+public class GithubInfo
+{
+    public bool Hireable { get; set; }
+    public int Public_Repos { get; set; }
+    public int Followers { get; set; }
+    public int Following { get; set; }
 }
 
 public class GithubProject {

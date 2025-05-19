@@ -13,6 +13,27 @@ public class GithubController(IHttpClientFactory httpClientFactory) : Controller
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient();
 
     [HttpGet]
+    [Route("/getInfo")]
+    public async Task<ActionResult<GithubInfo>> GetGithubInfo()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/users/GuildedThorn");
+        request.Headers.UserAgent.ParseAdd("MyCoolApp/1.0");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode, "Failed to fetch info.");
+    
+        var json = await response.Content.ReadAsStringAsync();
+        var info = JsonSerializer.Deserialize<GithubInfo>(json, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+    
+        return Ok(info);
+    }
+
+    [HttpGet]
     [Route("/getProjects")]
     public async Task<ActionResult<string>> GetGithubProjects() {
         var response = await _httpClient.GetAsync("https://pinned.berrysauce.dev/get/GuildedThorn");

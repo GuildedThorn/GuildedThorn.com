@@ -1,10 +1,11 @@
 import '@styles/App.css';
-import Table from "@components/Table.tsx";
+
+import Table from "@components/Table";
 import {useEffect, useState} from "react";
 import GitHubCalendar from "react-github-calendar";
-import {populateProjectData} from "../backend/api.ts";
-import {Project} from "@backend/types.ts";
-        
+import {populateGithubData, populateProjectData} from "@backend/api";
+import {Info, Project} from "@backend/types";
+
 
 const builds = [
     {
@@ -57,17 +58,26 @@ const githubBaseUrl = 'https://github.com/GuildedThorn';
 function App() {
 
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [info, setInfo] = useState<Info>();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadData = async () => {
-            const data = await populateProjectData();
-            if (data) setProjects(data);
-            setLoading(false);
+            try {
+                const info = await populateGithubData();
+                if (info) setInfo(info);
+
+                const data = await populateProjectData();
+                if (data) setProjects(data);
+            } catch (error) {
+                console.error("Failed to load data:", error);
+            } finally {
+                setLoading(false);
+            }
         };
 
-        loadData();
+        loadData().then(() => {});
     }, []);
 
     useEffect(() => {
@@ -124,7 +134,7 @@ function App() {
                     </p>
 
                     <img
-                        className="mx-auto"
+                        className="mx-auto mt-6 mb-6"
                         src={`https://lanyard.cnrad.dev/api/654849939175768074?theme=${
                             isDarkMode ? "dark" : "light"
                         }&bg=${isDarkMode ? "1e1e1e" : "ffffff"}&hideTimestamp=true`}
@@ -226,43 +236,55 @@ function App() {
                         Product, but for small things I will use nvim or nano.
                     </p>
 
-                    <div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 space-y-12">
-                        {projects.map((project, index) => (
-                            <div key={index}>
-                                <h2 className="text-lg font-bold">{project.name}</h2>
-                                <p className="p-2">
-                                    {project.description || "No description provided."}
-                                </p>
-                                <div className="items-center gap-2 text-sm mt-2">
-                                    <span className="text-gray-700 dark:text-gray-300 font-medium" style={{color: project.languageColor}}>
+                    <div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
+                        {info && (
+                            <div>
+                                <p className={"p-2"}>Looking for Job: {info.hireable ? "Yes" : "No"}</p>
+                                <p className={"p-2"}>Public Repos: {info.public_Repos}</p>
+                                <p className={"p-2"}>Followers: {info.followers}</p>
+                                <p className={"p-2"}>Following: {info.following}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
+                            {projects.map((project, index) => (
+                                <div key={index}>
+                                    <h2 className="text-lg font-bold">{project.name}</h2>
+                                    <p className="p-2">
+                                        {project.description || "No description provided."}
+                                    </p>
+                                    <div className="items-center gap-2 text-sm mt-2">
+                                    <span className="text-gray-700 dark:text-gray-300 font-medium"
+                                          style={{color: project.languageColor}}>
                                         {project.language}
                                     </span>
-                                    
-                                    <span className="text-gray-600 dark:text-gray-400">⭐ {project.stars}</span>
-                                    <span className="text-gray-600 dark:text-gray-400">🍴 {project.forks}</span>
-                                    
-                                    <br/>
-                                    <a
-                                        href={`${githubBaseUrl}/${project.name}`}
-                                        target="_blank"
-                                        className="text-red-500 dark:text-red-400"
-                                        rel="noopener noreferrer"
-                                    >
-                                        Git Link
-                                    </a>
 
+                                        <span className="text-gray-600 dark:text-gray-400">⭐ {project.stars}</span>
+                                        <span className="text-gray-600 dark:text-gray-400">🍴 {project.forks}</span>
+
+                                        <br/>
+                                        <a
+                                            href={`${githubBaseUrl}/${project.name}`}
+                                            target="_blank"
+                                            className="text-red-500 dark:text-red-400"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Git Link
+                                        </a>
+
+                                    </div>
+                                    <hr className="my-12 h-0.5 border-t-0 bg-neutral-300 dark:bg-white/20"/>
                                 </div>
-                                <hr className="my-12 h-0.5 border-t-0 bg-neutral-300 dark:bg-white/20"/>
-                            </div>
-                        ))}
-                    </div>
-                    <div className={"py-6"}>
-                        <GitHubCalendar username="GuildedThorn"/>
+                            ))}
+                        </div>
+                        <div className={"py-6"}>
+                            <GitHubCalendar username="GuildedThorn"/>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </>
-    );
-}
+            </>
+            );
+            }
 
-export default App;
+            export default App;
