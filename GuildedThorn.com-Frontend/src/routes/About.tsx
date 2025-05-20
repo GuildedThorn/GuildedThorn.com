@@ -11,12 +11,12 @@ interface ContactItemProps {
 
 function ContactItem({ icon, label, value }: ContactItemProps) {
     return (
-        <div className="flex items-start gap-4 p-4 bg-blue-500 rounded-lg shadow-md w-full max-w-xl mx-auto">
-            <div className="text-2xl">{icon}</div>
-            <div>
-                <div className="font-semibold">{label}</div>
-                <div>{value}</div>
+        <div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 px-6 mt-4 mb-4">
+            <div className="flex items-center space-x-2 text-lg font-semibold text-gray-800 dark:text-white">
+                <span className="text-xl">{icon}</span>
+                <span>{label}</span>
             </div>
+            <div className="mt-2 text-gray-700 dark:text-gray-300">{value}</div>
         </div>
     );
 }
