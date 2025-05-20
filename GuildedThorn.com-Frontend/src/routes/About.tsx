@@ -32,13 +32,15 @@ function About() {
                     label="Email"
                     value={
                         <>admin@guildedthorn.com using the attached{" "}
-                            <a href="/path/to/pgp.asc" className="text-sky-200">
+                            <a href="/files/GuildedThorn.pub" className="text-sky-200">
                                 PGP Signature
                             </a>
+                            <br/>
+                            Sha256 Checksum: a53d59d266f2969eaf560862bd953eeb309c4d6a0e1b0e1734aa57865f0c8b04  GuildedThorn.pub
                         </>
                     }
                 />
-                <ContactItem icon={<FiTwitter />} label="Twitter" value="@guildedthorn" />
+                <ContactItem icon={<FiTwitter />} label="Twitter" value="@guildedthorn"/>
                 <ContactItem icon={<FaScroll />} label="IRC" value="OFTC, EFNET, or Libera" />
             </div>
 
