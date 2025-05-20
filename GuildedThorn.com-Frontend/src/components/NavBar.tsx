@@ -5,6 +5,7 @@ import { CgHome } from "react-icons/cg";
 import { FaRadio } from "react-icons/fa6";
 
 function NavBar() {
+    
     const [isOpen, setIsOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -71,11 +72,11 @@ function NavBar() {
                         </li>
                         <li className="my-4 ps-2 lg:my-0 lg:pe-1 lg:ps-0">
                             <Link
-                                to="/about"
+                                to="/contact"
                                 className="text-black/60 dark:text-white/60 hover:text-black/80 dark:hover:text-white/80 lg:px-2"
                             >
                                 <FaQuestion className="inline-block mr-1 text-lg" />
-                                About
+                                Contact
                             </Link>
                         </li>
                     </ul>

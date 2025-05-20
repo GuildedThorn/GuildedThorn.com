@@ -21,7 +21,7 @@ function ContactItem({ icon, label, value }: ContactItemProps) {
     );
 }
 
-function About() {
+function Contact() {
     return (
         <div className="py-12 px-4 space-y-8">
             <h2 className="text-3xl font-bold text-white">Contact Me</h2>
@@ -53,4 +53,4 @@ function About() {
     );
 }
 
-export default About;
+export default Contact;
