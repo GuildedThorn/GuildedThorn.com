@@ -93,17 +93,32 @@ function App() {
                 <h1 className="text-3xl font-bold mb-4">Welcome to my portfolio</h1>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-8 py-6">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-8 p-4">
                 <div className="border dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
                     <img
-                        className="w-full max-w-md rounded-2xl shadow-lg mx-auto"
+                        className="w-full max-w-md rounded-2xl shadow-lg mx-auto m-2"
                         src="/images/Portfolio-Image.jpg"
                         alt="Portfolio"
                     />
-                    <h1>Jamie Duddleston</h1>
-                    <p className="text-lg mb-8">
+                    <h1 className={"m-2"}>Jamie Duddleston</h1>
+                    <p className="text-lg m-4">
                         I am 22 years old, I have many hobbies, some which include software
                         development, cyber security, audio equipment, game development, chess, building bikes, and much more.
+                        
+                        <br/>
+                        <br/>
+                        
+                        I was born and raised in Chicago, Illinois, I was a curious kid. 
+                        Always taking stuff apart to see how it worked (sometimes breaking and sometimes being able to put it back together again :D)
+                        I make mistakes like any other person, but I do learn from them, adapt and try to prevent them again. I love sports, enjoy my morning walks,
+                        and love to run. When I'm outside with headphones on there is nothing holding me back, the breeze on my face, the warming sensation of the sun, the birds chirping, 
+                        I live for it all. 
+                        
+                        <br/>
+                        <br/>
+                        
+                        I love automobiles and aircraft, going to car shows as a kid, being surrounded around mechanics and truck drivers, growing up with two of my best friends who are now in the air force.
+                        I am looking for a place where I can thrive, work my butt off and put the pedal to the metal. If you are interested in hiring me, dont hesitate to contact me at any of the given locations in my contact section.
                     </p>
                 </div>
 
@@ -119,22 +134,28 @@ function App() {
 
                     <p className="text-lg mb-8 mt-4">
                         Many people know me by my online persona: Thorn, I have had many handles in my life, but I think
-                        this one is to stay, I was a huge factions player on Minecraft at the time,
-                        so to me this username is a collective of things, Gilded meaning dressed in gold or perfect,
-                        Guild
-                        meaning a group of people in a team, and Thorn which in greek is `skolops and can be used to
-                        describe
-                        a pointed stake, or sharp object,
-                        which is what I was considered in game, the final dagger to many of the factions I played
-                        against,
-                        not too long after deciding on the handle I found this on
+                        this one is to stay. 
+                        
+                        <br/>
+                        <br/>
+                        
+                        I was a huge factions player on Minecraft at the time,
+                        so to me this username is a collective of things; Gilded (dressed in gold or perfect),
+                        Guild (a group of people in a team), and Thorn which in greek is `skolops (a pointed stake, or sharp object).
+                        
+                        <br/>
+                        <br/>
+                        
+                        Looking back I guess that's what I was considered in game, the final dagger to many of the factions I played
+                        against.
+                        Not too long after deciding on the handle I found this on
                         <a href={"https://gamejolt.com/games/guilded-thorn/158759"}> Gamejolt</a>, and knew it was meant
                         to
                         be. I wear the name with pride as many have accepted it for me.
                     </p>
 
                     <img
-                        className="mx-auto mt-6 mb-6"
+                        className="mx-auto m-4"
                         src={`https://lanyard.cnrad.dev/api/654849939175768074?theme=${
                             isDarkMode ? "dark" : "light"
                         }&bg=${isDarkMode ? "1e1e1e" : "ffffff"}&hideTimestamp=true`}
