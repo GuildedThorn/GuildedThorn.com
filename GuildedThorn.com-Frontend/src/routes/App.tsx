@@ -5,6 +5,7 @@ import {useEffect, useState} from "react";
 import GitHubCalendar from "react-github-calendar";
 import {populateGithubData, populateProjectData} from "@backend/api";
 import {Info, Project} from "@backend/types";
+import {Discord} from "@components/Discord.tsx";
 
 
 const builds = [
@@ -57,7 +58,7 @@ const githubBaseUrl = 'https://github.com/GuildedThorn';
 
 function App() {
 
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    // const [isDarkMode, setIsDarkMode] = useState(false);
     const [info, setInfo] = useState<Info>();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
@@ -81,8 +82,8 @@ function App() {
     }, []);
 
     useEffect(() => {
-        const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        setIsDarkMode(dark);
+        // const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        // // setIsDarkMode(dark);
     }, []);
 
     if (loading) return <div className="p-4 text-center text-gray-500">Loading projects...</div>;
@@ -103,22 +104,29 @@ function App() {
                     <h1 className={"m-2"}>Jamie Duddleston</h1>
                     <p className="text-lg m-4">
                         I am 22 years old, I have many hobbies, some which include software
-                        development, cyber security, audio equipment, game development, chess, building bikes, and much more.
-                        
+                        development, cyber security, audio equipment, game development, chess, building bikes, and much
+                        more.
+
                         <br/>
                         <br/>
-                        
-                        I was born and raised in Chicago, Illinois, I was a curious kid. 
-                        Always taking stuff apart to see how it worked (sometimes breaking and sometimes being able to put it back together again :D)
-                        I make mistakes like any other person, but I do learn from them, adapt and try to prevent them again. I love sports, enjoy my morning walks,
-                        and love to run. When I'm outside with headphones on there is nothing holding me back, the breeze on my face, the warming sensation of the sun, the birds chirping, 
-                        I live for it all. 
-                        
+
+                        I was born and raised in Chicago, Illinois, I was a curious kid.
+                        Always taking stuff apart to see how it worked (sometimes breaking and sometimes being able to
+                        put it back together again :D)
+                        I make mistakes like any other person, but I do learn from them, adapt and try to prevent them
+                        again. I love sports, enjoy my morning walks,
+                        and love to run. When I'm outside with headphones on there is nothing holding me back, the
+                        breeze on my face, the warming sensation of the sun, the birds chirping,
+                        I live for it all.
+
                         <br/>
                         <br/>
-                        
-                        I love automobiles and aircraft, going to car shows as a kid, being surrounded around mechanics and truck drivers, growing up with two of my best friends who are now in the air force.
-                        I am looking for a place where I can thrive, work my butt off and put the pedal to the metal. If you are interested in hiring me, dont hesitate to contact me at any of the given locations in my contact section.
+
+                        I love automobiles and aircraft, going to car shows as a kid, being surrounded around mechanics
+                        and truck drivers, growing up with two of my best friends who are now in the air force.
+                        I am looking for a place where I can thrive, work my butt off and put the pedal to the metal. If
+                        you are interested in hiring me, dont hesitate to contact me at any of the given locations in my
+                        contact section.
                     </p>
                 </div>
 
@@ -134,19 +142,21 @@ function App() {
 
                     <p className="text-lg mb-8 mt-4">
                         Many people know me by my online persona: Thorn, I have had many handles in my life, but I think
-                        this one is to stay. 
-                        
+                        this one is to stay.
+
                         <br/>
                         <br/>
-                        
+
                         I was a huge factions player on Minecraft at the time,
                         so to me this username is a collective of things; Gilded (dressed in gold or perfect),
-                        Guild (a group of people in a team), and Thorn which in greek is `skolops (a pointed stake, or sharp object).
-                        
+                        Guild (a group of people in a team), and Thorn which in greek is `skolops (a pointed stake, or
+                        sharp object).
+
                         <br/>
                         <br/>
-                        
-                        Looking back I guess that's what I was considered in game, the final dagger to many of the factions I played
+
+                        Looking back I guess that's what I was considered in game, the final dagger to many of the
+                        factions I played
                         against.
                         Not too long after deciding on the handle I found this on
                         <a href={"https://gamejolt.com/games/guilded-thorn/158759"}> Gamejolt</a>, and knew it was meant
@@ -154,13 +164,18 @@ function App() {
                         be. I wear the name with pride as many have accepted it for me.
                     </p>
 
-                    <img
-                        className="mx-auto m-4"
-                        src={`https://lanyard.cnrad.dev/api/654849939175768074?theme=${
-                            isDarkMode ? "dark" : "light"
-                        }&bg=${isDarkMode ? "1e1e1e" : "ffffff"}&hideTimestamp=true`}
-                        alt="Discord Status"
-                    />
+                    <Discord/>
+
+
+                    {/*<a href="https://discord.com/users/654849939175768074">*/}
+                    {/*    <img*/}
+                    {/*        className="mx-auto m-4"*/}
+                    {/*        src={`https://lanyard.cnrad.dev/api/654849939175768074?theme=${*/}
+                    {/*            isDarkMode ? "dark" : "light"*/}
+                    {/*        }&bg=${isDarkMode ? "1e1e1e" : "ffffff"}?hideSpotify=true&showDisplayName=true`}*/}
+                    {/*        alt="Discord Status"*/}
+                    {/*    />*/}
+                    {/*</a>*/}
                 </div>
             </div>
 
@@ -208,7 +223,7 @@ function App() {
                         I spend a LOT of time working on hardware... printers, camera, tvs and much more.
                     </p>
                     <div className="overflow-x-auto mt-4">
-                        <Table headers={headers} data={data} />
+                        <Table headers={headers} data={data}/>
                     </div>
 
                     <div className="border dark:border-gray-600 rounded-lg p-4 mt-4 bg-gray-100 dark:bg-gray-700">
@@ -269,43 +284,95 @@ function App() {
                     </div>
 
                     <div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
-                            {projects.map((project, index) => (
-                                <div key={index}>
-                                    <h2 className="text-lg font-bold">{project.name}</h2>
-                                    <p className="p-2">
-                                        {project.description || "No description provided."}
-                                    </p>
-                                    <div className="items-center gap-2 text-sm mt-2">
+                        {projects.map((project, index) => (
+                            <div key={index}>
+                                <h2 className="text-lg font-bold">{project.name}</h2>
+                                <p className="p-2">
+                                    {project.description || "No description provided."}
+                                </p>
+                                <div className="items-center gap-2 text-sm mt-2">
                                     <span className="text-gray-700 dark:text-gray-300 font-medium"
                                           style={{color: project.languageColor}}>
                                         {project.language}
                                     </span>
 
-                                        <span className="text-gray-600 dark:text-gray-400">⭐ {project.stars}</span>
-                                        <span className="text-gray-600 dark:text-gray-400">🍴 {project.forks}</span>
+                                    <span className="text-gray-600 dark:text-gray-400">⭐ {project.stars}</span>
+                                    <span className="text-gray-600 dark:text-gray-400">🍴 {project.forks}</span>
 
-                                        <br/>
-                                        <a
-                                            href={`${githubBaseUrl}/${project.name}`}
-                                            target="_blank"
-                                            className="text-red-500 dark:text-red-400"
-                                            rel="noopener noreferrer"
-                                        >
-                                            Git Link
-                                        </a>
+                                    <br/>
+                                    <a
+                                        href={`${githubBaseUrl}/${project.name}`}
+                                        target="_blank"
+                                        className="text-red-500 dark:text-red-400"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Git Link
+                                    </a>
 
-                                    </div>
-                                    <hr className="my-12 h-0.5 border-t-0 bg-neutral-300 dark:bg-white/20"/>
                                 </div>
-                            ))}
-                        </div>
-                        <div className={"py-6"}>
-                            <GitHubCalendar username="GuildedThorn"/>
-                        </div>
+                                <hr className="my-12 h-0.5 border-t-0 bg-neutral-300 dark:bg-white/20"/>
+                            </div>
+                        ))}
+                    </div>
+                    <div className={"py-6"}>
+                        <GitHubCalendar username="GuildedThorn"/>
                     </div>
                 </div>
-            </>
-            );
-            }
+            </div>
 
-            export default App;
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-1 lg:gap-8">
+                <div className="border dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800 m-4">
+                    <h1 className="font-[Caveat,_cursive] text-2xl mb-2">Automobiles</h1>
+                    <p>I love cars, many of my family and friends having project cars, going to shows as a kid, World of
+                        wheels, Cars and Coffee, Seneca car shows, and a lot more to name,
+                        I've wanted to get one for a very long time, it happened in 2025, my friend told me about a 2004
+                        Trailblazer EXT on facebook marketplace being listed for 1k usd at 300k miles.
+                        Messaged the guy, went there check it out, came back about a week later with cash in hand and
+                        bought it, you know who you are.
+                        but thank you for letting me swap the solenoids in your driveway. We had to go 40mph down the
+                        side roads because it wouldn't go into 3rd gear,
+                        which as of the date of writing this, I still have not dropped the trans and rebuilt it, but we
+                        got it home.</p>
+                    <div
+                        className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-6 px-6 mt-4 mb-4">
+                        <h1 className="text-xl font-semibold text-white mb-4">2004 Trail blazer EXT</h1>
+
+                        <div className="flex flex-col md:flex-row gap-8 text-sm md:text-base text-white">
+                            {/* Audio Info */}
+                            <div className="flex-1 space-y-2">
+                                <h2 className="font-semibold mb-2">Description</h2>
+                                <p><strong>Model:</strong> Trailblazer EXT</p>
+                                <p><strong>Year:</strong> 2004</p>
+                                <p><strong>Paint Color:</strong> UNKNOWN</p>
+                                <p><strong>Miles:</strong> 300K+</p>
+                            </div>
+
+                            {/* Part List */}
+                            <div className="flex-1">
+                                <h2 className="font-semibold mb-2">Part List</h2>
+                                <ul className="list-disc list-inside space-y-1">
+                                    <li>Passenger Side Front Fender (DONE)</li>
+                                    <li>4L60E Transmission Rebuild Kit</li>
+                                    <li>Lower and Upper Control Arms</li>
+                                    <li>Mechman Alternator</li>
+                                    <li>XS Power Battery</li>
+                                    <li>Big 3 Wiring Kit</li>
+                                    <li>Coil Packs</li>
+                                    <li>Spark Plugs</li>
+                                    <li>Fan Clutch</li>
+                                    <li>Throttle Body</li>
+                                    <li>Shocks</li>
+                                    <li>Rotors, Pads, and Struts</li>
+                                    <li>Timing Belt/Serpentine Belt</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </>
+    );
+}
+
+export default App;
