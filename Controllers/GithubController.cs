@@ -8,14 +8,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace GuildedThorn.com.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class GithubController(IHttpClientFactory httpClientFactory) : Controller {
+    
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient();
 
     [HttpGet]
     [Route("/getInfo")]
-    public async Task<ActionResult<GithubInfo>> GetGithubInfo()
-    {
+    public async Task<ActionResult<GithubInfo>> GetGithubInfo() {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/users/GuildedThorn");
         request.Headers.UserAgent.ParseAdd("MyCoolApp/1.0");
     
@@ -25,8 +25,7 @@ public class GithubController(IHttpClientFactory httpClientFactory) : Controller
             return StatusCode((int)response.StatusCode, "Failed to fetch info.");
     
         var json = await response.Content.ReadAsStringAsync();
-        var info = JsonSerializer.Deserialize<GithubInfo>(json, new JsonSerializerOptions
-        {
+        var info = JsonSerializer.Deserialize<GithubInfo>(json, new JsonSerializerOptions {
             PropertyNameCaseInsensitive = true
         });
     
@@ -41,8 +40,7 @@ public class GithubController(IHttpClientFactory httpClientFactory) : Controller
             return StatusCode((int)response.StatusCode, "Failed to fetch projects.");
 
         var json = await response.Content.ReadAsStringAsync();
-        var projects = JsonSerializer.Deserialize<List<GithubProject>>(json, new JsonSerializerOptions
-        {
+        var projects = JsonSerializer.Deserialize<List<GithubProject>>(json, new JsonSerializerOptions {
             PropertyNameCaseInsensitive = true
         });
 
