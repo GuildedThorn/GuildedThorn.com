@@ -225,130 +225,6 @@ function App() {
 					</div>
 				</Card>
 
-				<Card title={"Software Development"}>
-					<p className={"flex flex-col py-4"}>
-						I write a lot of software, frontend, backend, you name it. I have
-						many preferred languages, but you'll mostly see me writing in c#,
-						java, typescript. I used to be a SQL main but now I mostly use
-						MongoDB now. My IDE of choice is any Jetbrains Product, but for
-						small things I will use nvim or nano.
-					</p>
-
-					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
-						{info && (
-							<div>
-								<p className={"p-2"}>
-									Looking for Job: {info.hireable ? "Yes" : "No"}
-								</p>
-								<p className={"p-2"}>Public Repos: {info.public_Repos}</p>
-								<p className={"p-2"}>Followers: {info.followers}</p>
-								<p className={"p-2"}>Following: {info.following}</p>
-							</div>
-						)}
-					</div>
-
-					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
-						{projects.map((project, index) => (
-							<div key={index}>
-								<h2 className="text-lg font-bold">{project.name}</h2>
-								<p className="p-2">
-									{project.description || "No description provided."}
-								</p>
-								<div className="items-center gap-2 text-sm mt-2">
-									<span
-										className="text-gray-700 dark:text-gray-300 font-medium"
-										style={{ color: project.languageColor }}
-									>
-										{project.language}
-									</span>
-
-									<span className="text-gray-600 dark:text-gray-400">
-										⭐ {project.stars}
-									</span>
-									<span className="text-gray-600 dark:text-gray-400">
-										🍴 {project.forks}
-									</span>
-
-									<br />
-									<a
-										href={`${githubBaseUrl}/${project.name}`}
-										target="_blank"
-										className="text-red-500 dark:text-red-400"
-										rel="noopener noreferrer"
-									>
-										Git Link
-									</a>
-								</div>
-								<hr className="my-12 h-0.5 border-t-0 bg-neutral-300 dark:bg-white/20" />
-							</div>
-						))}
-					</div>
-					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
-						<h2 className="text-xl font-semibold text-center mb-4">
-							GitHub Activity
-						</h2>
-						<GitHubCalendar username="GuildedThorn" />
-					</div>
-				</Card>
-			</div>
-
-			<div className="section">
-				<Card title={"Audiophile"}>
-					<p>
-						I love music, audio systems, lighting, lasers, and pyrotechnics...
-					</p>
-					<p className="text-sm md:text-base text-center mt-4">
-						Current build includes speakers from Pioneer, Sony, Legrand, and
-						more...
-					</p>
-
-					<div className="mt-4 space-y-2 text-sm md:text-base">
-						<p>
-							<strong>Receiver:</strong> Pioneer RX-V765
-						</p>
-						<p>
-							<strong>Center Speaker:</strong> JBL N-Center, Klipsch KSF-C5
-						</p>
-						<p>
-							<strong>Left/Right Front:</strong> 2x Sony 3-way speakers
-						</p>
-						<p>
-							<strong>Surround:</strong> Legrand + Sharp 3-way speakers
-						</p>
-						<p>
-							<strong>Presence:</strong> 2x Pioneer Graybar TV Speakers
-						</p>
-						<p>
-							<strong>Rear:</strong> 2x Pioneer 3-way speakers
-						</p>
-						<p>
-							<strong>Amps:</strong> 2500W Power Acoustik, 1000W Pioneer, 1000W
-							Skar Audio RP1504AB
-						</p>
-						<p>
-							<strong>Right Subwoofer:</strong> 2x Kicker CompVR
-						</p>
-						<p>
-							<strong>Left Subwoofer:</strong> 2x Kicker CompC
-						</p>
-					</div>
-
-					<a
-						href={spotifyProfileLink}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="inline-flex items-center mt-4 space-x-2"
-					>
-						<img
-							src="https://spotify-drmg65jrz.vercel.app/api/spotify"
-							alt="Spotify Profile"
-							className="h-20 w-auto rounded-lg shadow-md"
-						/>
-					</a>
-
-					<SpotifyTopArtists />
-				</Card>
-
 				<Card title={"Automobiles"}>
 					<div className={"flex flex-col gap-3"}>
 						<p>
@@ -414,6 +290,132 @@ function App() {
 								</ul>
 							</div>
 						</div>
+					</div>
+				</Card>
+			</div>
+
+			<div className="section">
+				<Card title={"Audiophile"}>
+					<p>
+						I love music, audio systems, lighting, lasers, and pyrotechnics...
+					</p>
+					<p className="text-sm md:text-base text-center mt-4">
+						Current build includes speakers from Pioneer, Sony, Legrand, and
+						more...
+					</p>
+
+					<a
+						href={spotifyProfileLink}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex items-center mt-4 space-x-2"
+					><img
+							src="https://spotify-drmg65jrz.vercel.app/api/spotify"
+							alt="Spotify Profile"
+							className="h-20 w-auto rounded-lg shadow-md"
+					/></a>
+
+					<div
+						className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-6 px-6 mt-4 mb-4">
+						<h1>Room Setup</h1>
+						<div className="mt-4 space-y-2 text-sm md:text-base">
+							<p>
+								<strong>Receiver:</strong> Pioneer RX-V765
+							</p>
+							<p>
+								<strong>Center Speaker:</strong> JBL N-Center, Klipsch KSF-C5
+							</p>
+							<p>
+								<strong>Left/Right Front:</strong> 2x Sony 3-way speakers
+							</p>
+							<p>
+								<strong>Surround:</strong> Legrand + Sharp 3-way speakers
+							</p>
+							<p>
+								<strong>Presence:</strong> 2x Pioneer Graybar TV Speakers
+							</p>
+							<p>
+								<strong>Rear:</strong> 2x Pioneer 3-way speakers
+							</p>
+							<p>
+								<strong>Amps:</strong> 2500W Power Acoustik, 1000W Pioneer, 1000W
+								Skar Audio RP1504AB
+							</p>
+							<p>
+								<strong>Right Subwoofer:</strong> 2x Kicker CompVR
+							</p>
+							<p>
+								<strong>Left Subwoofer:</strong> 2x Kicker CompC
+							</p>
+						</div>
+					</div>
+
+					<SpotifyTopArtists/>
+				</Card>
+
+				<Card title={"Software Development"}>
+					<p className={"flex flex-col py-4"}>
+						I write a lot of software, frontend, backend, you name it. I have
+						many preferred languages, but you'll mostly see me writing in c#,
+						java, typescript. I used to be a SQL main but now I mostly use
+						MongoDB now. My IDE of choice is any Jetbrains Product, but for
+						small things I will use nvim or nano.
+					</p>
+
+					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
+						{info && (
+							<div>
+								<p className={"p-2"}>
+									Looking for Job: {info.hireable ? "Yes" : "No"}
+								</p>
+								<p className={"p-2"}>Public Repos: {info.public_Repos}</p>
+								<p className={"p-2"}>Followers: {info.followers}</p>
+								<p className={"p-2"}>Following: {info.following}</p>
+							</div>
+						)}
+					</div>
+
+					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
+						{projects.map((project, index) => (
+							<div key={index}>
+								<h2 className="text-lg font-bold">{project.name}</h2>
+								<p className="p-2">
+									{project.description || "No description provided."}
+								</p>
+								<div className="items-center gap-2 text-sm mt-2">
+									<span
+										className="text-gray-700 dark:text-gray-300 font-medium"
+										style={{ color: project.languageColor }}
+									>
+										{project.language}
+									</span>
+
+									<span className="text-gray-600 dark:text-gray-400">
+										⭐ {project.stars}
+									</span>
+									<span className="text-gray-600 dark:text-gray-400">
+										🍴 {project.forks}
+									</span>
+
+									<br />
+									<a
+										href={`${githubBaseUrl}/${project.name}`}
+										target="_blank"
+										className="text-red-500 dark:text-red-400"
+										rel="noopener noreferrer"
+									>
+										Git Link
+									</a>
+								</div>
+								<hr className="my-12 h-0.5 border-t-0 bg-neutral-300 dark:bg-white/20" />
+							</div>
+						))}
+					</div>
+					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
+						<h2 className="text-xl font-semibold text-center mb-4">
+							GitHub Activity
+						</h2>
+						<GitHubCalendar username="GuildedThorn" />
 					</div>
 				</Card>
 			</div>
