@@ -17,6 +17,7 @@ import BlogList from '@components/Blog/BlogList';
 import BlogPost from "@components/Blog/BlogPost.tsx";
 import BlogUpload from "@pages/BlogUpload.tsx";
 import {Suspense} from "react";
+import PomodoroTimer from "@pages/PomodoroTimer.tsx";
 
 export default function AppRoutes() {
     return (
@@ -30,6 +31,7 @@ export default function AppRoutes() {
                     <Route path="contact" element={<Contact />} />
                     <Route path="net" element={<ThornNet />} />
                     <Route path="stream" element={<Stream />} />
+                    <Route path="pomodoro" element={<PomodoroTimer/>} />
                     
                     <Route path="blog/upload" element={<BlogUpload />} />
                     <Route path="blog/pages" element={<BlogLayout />}>
