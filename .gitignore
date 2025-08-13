@@ -1,0 +1,14 @@
+# Jetbrains Generated files
+/.idea
+
+# Dotnet Generated files
+/publish
+/obj
+
+# Node.js Generated files
+/node_modules
+/dist
+/wwwroot
+
+# Credential Files
+*.env

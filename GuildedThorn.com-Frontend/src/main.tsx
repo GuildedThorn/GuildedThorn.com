@@ -1,25 +1,14 @@
-import '@styles/index.css'
+import "@styles/index.css";
 
-import App from '@routes/App'
-import Radio from '@routes/Radio'
-import About from "@routes/About.tsx";
+import AppRoutes from "@routes/AppRoutes";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import {AuthProvider} from "@components/AuthContext.tsx";
 
-import NavBar from "@components/NavBar.tsx";
-
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-
-createRoot(document.getElementById('root')!).render(
-    <StrictMode>
+createRoot(document.getElementById("root")!).render(
+    <AuthProvider>
         <BrowserRouter>
-            {/* Place NavBar inside BrowserRouter */}
-            <NavBar />
-            <Routes>
-                <Route path={"/"} element={<App/>}/>
-                <Route path={"/about"} element={<About/>}/>
-                <Route path={"/radio"} element={<Radio/>}/>
-            </Routes>
+            <AppRoutes />
         </BrowserRouter>
-    </StrictMode>
-)
+    </AuthProvider>
+);

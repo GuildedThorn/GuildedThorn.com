@@ -7,6 +7,4 @@ namespace GuildedThorn.com.Controllers;
 [Route("/api/[controller]")]
 public class RadioController(RadioService service) : ControllerBase  {
     private RadioService _service = service;
-    
-    
 }
