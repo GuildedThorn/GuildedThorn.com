@@ -9,3 +9,6 @@
 /node_modules
 /dist
 /wwwroot
+
+# Credential Files
+*.env
