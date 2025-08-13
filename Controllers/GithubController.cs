@@ -3,18 +3,19 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using GuildedThorn.com.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GuildedThorn.com.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class GithubController(IHttpClientFactory httpClientFactory) : Controller {
+public class GithubController(IHttpClientFactory httpClientFactory) : ControllerBase {
     
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient();
 
-    [HttpGet]
-    [Route("/getInfo")]
+    [AllowAnonymous]
+    [HttpGet("getInfo")]
     public async Task<ActionResult<GithubInfo>> GetGithubInfo() {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/users/GuildedThorn");
         request.Headers.UserAgent.ParseAdd("MyCoolApp/1.0");
@@ -32,8 +33,8 @@ public class GithubController(IHttpClientFactory httpClientFactory) : Controller
         return Ok(info);
     }
 
-    [HttpGet]
-    [Route("/getProjects")]
+    [AllowAnonymous]
+    [HttpGet("getProjects")]
     public async Task<ActionResult<string>> GetGithubProjects() {
         var response = await _httpClient.GetAsync("https://pinned.berrysauce.dev/get/GuildedThorn");
         if (!response.IsSuccessStatusCode)

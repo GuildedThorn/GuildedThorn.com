@@ -1,6 +1,6 @@
 export type Info = {
 	hireable: boolean;
-	public_Repos: number;
+	public_repos: number;
 	followers: number;
 	following: number;
 };
@@ -15,8 +15,19 @@ export type Project = {
 	forks: number;
 };
 
-export type Artist = {
+export type Artist = {	
 	name: string;
 	genres: string[];
 	imageUrl?: string;
 };
+
+export type User = {
+	username: string;
+	password: string;
+};
+
+export type UserUpdateRequest = {
+	FirstName?: string;
+	LastName?: string;
+	Email?: string;
+}

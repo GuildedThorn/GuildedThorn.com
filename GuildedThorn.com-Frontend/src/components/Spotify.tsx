@@ -12,7 +12,7 @@ function SpotifyTopArtists() {
 				const data = await getTopSpotifyArtists();
 				setArtists(data);
 			} catch (err) {
-				setError("Failed to load Spotify artists");
+				setError("Failed to load Spotify artists, please login or try again later.");
 				console.error(err);
 			}
 		};
@@ -23,7 +23,7 @@ function SpotifyTopArtists() {
 	if (error) return <div>{error}</div>;
 
 	return (
-		<div className="border rounded-lg p-4 bg-white dark:bg-gray-800">
+		<div className="border rou1111111111111111nded-lg p-4 bg-white dark:bg-gray-800">
 			<h2 className="text-xl font-bold mb-4">Top Artists</h2>
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 				{artists.map((artist, index) => (

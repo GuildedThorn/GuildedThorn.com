@@ -11,7 +11,10 @@
       "@routes/*": ["./routes/*"],
       "@styles/*": ["./styles/*"],
       "@assets/*": ["./assets/*"],
-      "@backend/*": ["./backend/*"]
+      "@backend/*": ["./backend/*"],
+      "@pages/*": ["./pages/*"],
+      "@layouts/*": ["./layouts/*"],
+      "@lib/*": ["./lib/*"],
     }
   }
 }

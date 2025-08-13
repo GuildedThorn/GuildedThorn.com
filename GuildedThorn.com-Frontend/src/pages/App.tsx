@@ -1,13 +1,13 @@
 import "@styles/App.css";
 
-import Table from "@components/Table";
+import Table from "@components/ui/Table";
 import { useEffect, useState } from "react";
 import GitHubCalendar from "react-github-calendar";
 import { populateGithubData, populateProjectData } from "@backend/api";
 import { Info, Project } from "@backend/types";
-import { Discord } from "@components/Discord.tsx";
-import SpotifyTopArtists from "@components/Spotify.tsx";
-import Card from "@components/Card.tsx";
+import { Discord } from "@components/Discord";
+import SpotifyTopArtists from "@components/Spotify";
+import { Card } from "@components/ui/Card";
 
 const builds = [
 	{
@@ -68,33 +68,39 @@ const spotifyProfileLink =
 const githubBaseUrl = "https://github.com/GuildedThorn";
 
 function App() {
-	// const [isDarkMode, setIsDarkMode] = useState(false);
 	const [info, setInfo] = useState<Info>();
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		const loadData = async () => {
-			try {
-				const info = await populateGithubData();
-				if (info) setInfo(info);
+		const controller = new AbortController();
 
-				const data = await populateProjectData();
+		async function loadData() {
+			try {
+				const [info, data] = await Promise.all([
+					populateGithubData(controller.signal),
+					populateProjectData(controller.signal),
+				]);
+
+				if (info) setInfo(info);
 				if (data) setProjects(data);
-			} catch (error) {
-				console.error("Failed to load data:", error);
+			} catch (error: unknown) {
+				if (error instanceof Error && error.name === "AbortError") {
+					console.log("Fetch aborted");
+				} else {
+					console.error("Fetch error:", error);
+				}
 			} finally {
 				setLoading(false);
 			}
-		};
+		}
 
-		loadData().then(() => {});
+		loadData().then(null);
+
+		return () => controller.abort();
 	}, []);
 
-	useEffect(() => {
-		// const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-		// // setIsDarkMode(dark);
-	}, []);
+
 
 	if (loading)
 		return (
@@ -109,6 +115,7 @@ function App() {
 
 			<div className="section">
 				<Card title={"Jamie Duddleston"}>
+					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Jamie Duddleston</h1>
 					<img
 						className="w-full max-w-md rounded-2xl shadow-lg mx-auto m-2"
 						src="/images/Portfolio-Image.jpg"
@@ -140,13 +147,15 @@ function App() {
 							section.
 						</p>
 					</div>
+					<a href={"/files/Resume.pdf"} target={"_blank"}>Here's my resume</a>
 				</Card>
 
-				<Card title={"GuildedThorn"}>
+				<Card title={"Digital Life"}>
+					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Digital Life</h1>
 					<div className="items-center justify-center p-2">
 						<img
 							className="w-full max-w-md rounded-2xl shadow-lg mx-auto"
-							src="/images/Logo.svg"
+							src="/images/FullLogo.jpg"
 							alt="Logo"
 						/>
 					</div>
@@ -181,6 +190,7 @@ function App() {
 			<div className="section">
 				{/* Setup */}
 				<Card title={"Setup"}>
+					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Setup</h1>
 					<p>
 						I spend a LOT of time working on hardware... printers, camera, tvs
 						and much more.
@@ -226,6 +236,7 @@ function App() {
 				</Card>
 
 				<Card title={"Automobiles"}>
+					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Automobiles</h1>
 					<div className={"flex flex-col gap-3"}>
 						<p>
 							I love cars, many of my family and friends having project cars,
@@ -248,11 +259,11 @@ function App() {
 					</div>
 
 					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-6 px-6 mt-4 mb-4">
-						<h1 className="text-xl font-semibold text-white mb-4">
+						<h1 className="text-xl font-semibold mb-4">
 							2004 Trail blazer EXT
 						</h1>
 
-						<div className="flex flex-col md:flex-row gap-8 text-sm md:text-base text-white">
+						<div className="flex flex-col md:flex-row gap-8 text-sm md:text-base">
 							{/* Audio Info */}
 							<div className="flex-1 space-y-2">
 								<h2 className="font-semibold mb-2">Description</h2>
@@ -296,6 +307,7 @@ function App() {
 
 			<div className="section">
 				<Card title={"Audiophile"}>
+					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Audiophiles</h1>
 					<p>
 						I love music, audio systems, lighting, lasers, and pyrotechnics...
 					</p>
@@ -310,9 +322,9 @@ function App() {
 						rel="noopener noreferrer"
 						className="inline-flex items-center mt-4 space-x-2"
 					><img
-							src="https://spotify-drmg65jrz.vercel.app/api/spotify"
-							alt="Spotify Profile"
-							className="h-20 w-auto rounded-lg shadow-md"
+						src="https://spotify-drmg65jrz.vercel.app/api/spotify"
+						alt="Spotify Profile"
+						className="h-20 w-auto rounded-lg shadow-md"
 					/></a>
 
 					<div
@@ -354,6 +366,7 @@ function App() {
 				</Card>
 
 				<Card title={"Software Development"}>
+					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Software Development</h1>
 					<p className={"flex flex-col py-4"}>
 						I write a lot of software, frontend, backend, you name it. I have
 						many preferred languages, but you'll mostly see me writing in c#,
@@ -368,7 +381,7 @@ function App() {
 								<p className={"p-2"}>
 									Looking for Job: {info.hireable ? "Yes" : "No"}
 								</p>
-								<p className={"p-2"}>Public Repos: {info.public_Repos}</p>
+								<p className={"p-2"}>Public Repos: {info.public_repos}</p>
 								<p className={"p-2"}>Followers: {info.followers}</p>
 								<p className={"p-2"}>Following: {info.following}</p>
 							</div>
@@ -376,8 +389,8 @@ function App() {
 					</div>
 
 					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
-						{projects.map((project, index) => (
-							<div key={index}>
+						{projects.map((project) => (
+							<div key={project.name}>
 								<h2 className="text-lg font-bold">{project.name}</h2>
 								<p className="p-2">
 									{project.description || "No description provided."}
@@ -411,11 +424,13 @@ function App() {
 							</div>
 						))}
 					</div>
-					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
+					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700">
 						<h2 className="text-xl font-semibold text-center mb-4">
 							GitHub Activity
 						</h2>
-						<GitHubCalendar username="GuildedThorn" />
+						<div className="overflow-x-auto p-4">
+							<GitHubCalendar username="GuildedThorn"/>
+						</div>
 					</div>
 				</Card>
 			</div>
