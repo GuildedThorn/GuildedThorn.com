@@ -18,6 +18,10 @@ import BlogPost from "@components/Blog/BlogPost.tsx";
 import BlogUpload from "@pages/BlogUpload.tsx";
 import {Suspense} from "react";
 import PomodoroTimer from "@pages/PomodoroTimer.tsx";
+import GalleryUpload from "@pages/GalleryUpload.tsx";
+import GalleryPost from "@components/Gallery/GalleryPost.tsx";
+import GalleryList from "@components/Gallery/GalleryList.tsx";
+import GalleryLayout from "@layouts/GalleryLayout.tsx";
 
 export default function AppRoutes() {
     return (
@@ -32,18 +36,24 @@ export default function AppRoutes() {
                     <Route path="net" element={<ThornNet />} />
                     <Route path="stream" element={<Stream />} />
                     <Route path="pomodoro" element={<PomodoroTimer/>} />
-                    
-                    <Route path="blog/upload" element={<BlogUpload />} />
-                    <Route path="blog/pages" element={<BlogLayout />}>
-                        <Route index element={<BlogList />} />
-                        <Route path=":id" element={<BlogPost />} />
-                    </Route>
 
                     {/* Protected routes */}
                     <Route element={<ProtectedRouter />}>
                         <Route path="settings" element={<UserSettings />} />
                         <Route path="guestbook" element={<GuestBook />} />
                         <Route path="radio" element={<Radio />} />
+
+                        <Route path="blog/upload" element={<BlogUpload />} />
+                        <Route path="blog/pages" element={<BlogLayout />}>
+                            <Route index element={<BlogList />} />
+                            <Route path=":id" element={<BlogPost />} />
+                        </Route>
+
+                        <Route path="gallery/upload" element={<GalleryUpload/>} />
+                        <Route path="gallery/images" element={<GalleryLayout/>}>
+                            <Route index element={<GalleryList/>} />
+                            <Route path=":id" element={<GalleryPost />} />
+                        </Route>
                     </Route>
 
                     {/* Catch-all */}
