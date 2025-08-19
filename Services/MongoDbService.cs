@@ -32,4 +32,8 @@ public class MongoDbService {
     public IMongoCollection<BlogPost> GetBlogPostCollection() {
         return _database.GetCollection<BlogPost>("BlogPosts");
     }
+    
+    public IMongoCollection<GalleryImage> GetGalleryImageCollection() {
+        return _database.GetCollection<GalleryImage>("GalleryImages");
+    }
 }

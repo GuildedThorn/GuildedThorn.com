@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { FaQuestion, FaScroll, FaStream } from "react-icons/fa";
+import {FaImages, FaQuestion, FaScroll, FaStream} from "react-icons/fa";
 import { PiNetwork } from "react-icons/pi";
 import { FaRadio } from "react-icons/fa6";
 
@@ -11,6 +11,7 @@ export default function NavBar() {
 	const navItems = [
 		{ to: "/stream", label: "Stream", icon: <FaStream className="inline-block mr-1 text-lg" /> },
 		{ to: "/net", label: "Network", icon: <PiNetwork className="inline-block mr-1 text-lg" /> },
+		{ to: "/gallery/images/" , label: "Gallery", icon: <FaImages className="inline-block mr-1 text-lg" /> },
 		{ to: "/blog/pages", label: "Blog", icon: <FaScroll className="inline-block mr-1 text-lg" /> },
 		{ to: "/radio", label: "Radio", icon: <FaRadio className="inline-block mr-1 text-lg" /> },
 		{ to: "/guestbook", label: "Guestbook", icon: <FaQuestion className="inline-block mr-1 text-lg" /> },
