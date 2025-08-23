@@ -29,6 +29,7 @@ export default function NavBar() {
 				{ to: "/tools/pomodoro", label: "Pomodoro Timer" },
 				{ to: "/tools/regex", label: "Regex Tester" },
 				{ to: "/tools/loremipsum", label: "Lorem Ipsum Generator" },
+				{ to: "/tools/colorconverter", label: "Color Converter" },
 			],
 		},
 		{ to: "/contact", label: "Contact", icon: <FaQuestion className="inline-block mr-1 text-lg" /> },

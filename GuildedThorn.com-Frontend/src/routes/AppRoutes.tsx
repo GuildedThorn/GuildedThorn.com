@@ -24,6 +24,7 @@ import GalleryList from "@components/Gallery/GalleryList.tsx";
 import GalleryLayout from "@layouts/GalleryLayout.tsx";
 import RegexTester from "@pages/RegexTester.tsx";
 import LoremIpsumGenerator from "@pages/LoremIpsumGenerator.tsx";
+import ColorConverter from "@pages/ColorConverter.tsx";
 
 
 export default function AppRoutes() {
@@ -42,7 +43,7 @@ export default function AppRoutes() {
                     <Route path="tools/pomodoro" element={<PomodoroTimer/>} />
                     <Route path="tools/regex" element={<RegexTester/>} />
                     <Route path="tools/loremipsum" element={<LoremIpsumGenerator />} />
-
+                    <Route path="tools/colorconverter" element={<ColorConverter />} />
 
                     {/* Protected routes */}
                     <Route element={<ProtectedRouter />}>
