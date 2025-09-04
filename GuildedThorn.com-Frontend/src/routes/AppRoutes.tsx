@@ -25,6 +25,7 @@ import GalleryLayout from "@layouts/GalleryLayout.tsx";
 import RegexTester from "@pages/RegexTester.tsx";
 import LoremIpsumGenerator from "@pages/LoremIpsumGenerator.tsx";
 import ColorConverter from "@pages/ColorConverter.tsx";
+import UUIDGenerator from "@pages/UUIDGenerator.tsx";
 
 
 export default function AppRoutes() {
@@ -44,6 +45,7 @@ export default function AppRoutes() {
                     <Route path="tools/regex" element={<RegexTester/>} />
                     <Route path="tools/loremipsum" element={<LoremIpsumGenerator />} />
                     <Route path="tools/colorconverter" element={<ColorConverter />} />
+                    <Route path="tools/uuidgenerator" element={<UUIDGenerator />} />
 
                     {/* Protected routes */}
                     <Route element={<ProtectedRouter />}>
