@@ -1,21 +1,52 @@
 using System;
+using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using GuildedThorn.com.Models;
 using GuildedThorn.com.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Sinks.Grafana.Loki;
 
+// ---------- Load env first ----------
 DotNetEnv.Env.Load(".env");
 
+// ---------- Create builder ----------
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+
+// Merge config from appsettings + config.json + .env
+builder.Configuration
+    .SetBasePath(AppContext.BaseDirectory)
+    .AddJsonFile("Resources/config.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables();
 var configuration = builder.Configuration;
 
-// ---------- 1. Add services ----------
+// ---------- Logging ----------
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+    )
+    .WriteTo.GrafanaLoki(
+        uri: configuration["Loki:Uri"] 
+             ?? throw new InvalidOperationException("Loki URI not configured."),
+        labels: [
+            new LokiLabel { Key = "app", Value = "guildedthorn.com" },
+            new LokiLabel { Key = "env", Value = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "dev" },
+            new LokiLabel { Key = "machine", Value = Environment.MachineName }
+        ])
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// ---------- Services ----------
 services.Configure<SpotifySettings>(configuration.GetSection("Spotify"));
 services.AddHttpClient();
 services.AddControllers();
@@ -23,14 +54,14 @@ services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 
 // ---- JWT signing key ----
-var keyBytes = Convert.FromBase64String(configuration["Jwt:Key"]
-                                        ?? throw new InvalidOperationException("JWT signing key is not configured."));
+var keyBytes = Convert.FromBase64String(
+    configuration["Jwt:Key"] 
+    ?? throw new InvalidOperationException("JWT signing key not configured."));
 var key = new SymmetricSecurityKey(keyBytes);
-var signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
 services.AddHttpContextAccessor();
 services.AddSingleton(key);
-services.AddSingleton(signingCredentials);
+services.AddSingleton(new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
 
 // ---- CORS ----
 services.AddCors(options => {
@@ -73,23 +104,14 @@ services.AddAuthentication(options => {
                 return Task.CompletedTask;
             }
         };
-    })
-    .AddCookie("Cookies", options => {
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
-        options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
     });
 
 // ---- HttpClient for Spotify ----
 services.AddHttpClient("Spotify", client =>
     client.Timeout = TimeSpan.FromSeconds(10));
 
-// ---- OpenIddict client (kept, single config) ----
-services.AddOpenIddict()
-    .AddCore(_ => {
-        /* client-only */
-    });
+// ---- OpenIddict client (stubbed) ----
+services.AddOpenIddict().AddCore(_ => { });
 
 // ---- SignalR ----
 services.AddSignalR(hubOpts => {
@@ -104,10 +126,10 @@ services.AddSingleton<RabbitMqService>();
 services.AddScoped<ChatService>();
 services.AddSingleton<RadioService>();
 
-// ---------- 2. Build the app ----------
+// ---------- Build ----------
 var app = builder.Build();
 
-// ---------- 3. Middleware ----------
+// ---------- Middleware ----------
 if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -120,25 +142,13 @@ app.UseRouting();
 
 app.UseCors("AllowFrontend");
 
-// Bypass auth for Spotify manual callback (so your controller handles the code exchange)
-app.Use(async (context, next) => {
-    if (context.Request.Path.StartsWithSegments("/api/spotify/callback", StringComparison.OrdinalIgnoreCase)) {
-        // Don't challenge/validate JWT for this route — let the controller be reached
-        await next();
-        return;
-    }
-
-    await next();
-});
-
+// ---- Auth must be after CORS & before endpoints ----
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHub<ChatHub>("/chathub")
-    .RequireCors("AllowFrontend");
-
-app.MapControllers()
-    .RequireCors("AllowFrontend");
+// ---- Hubs & Controllers ----
+app.MapHub<ChatHub>("/chathub").RequireCors("AllowFrontend");
+app.MapControllers().RequireCors("AllowFrontend");
 
 app.MapFallbackToFile("index.html");
 
