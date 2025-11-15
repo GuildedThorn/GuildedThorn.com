@@ -1,24 +1,23 @@
 import { useEffect, useState, useRef } from "react";
 import { Play, Pause, Volume2, VolumeX, RefreshCw } from "lucide-react";
-import {Button} from "@components/ui/Button";
+import { Button } from "@components/ui/Button";
 import {
 	HubConnectionBuilder,
 	LogLevel,
 } from "@microsoft/signalr";
 import Slider from "@components/ui/Slider.tsx";
-import {Card} from "@components/ui/Card.tsx";
+import { Card } from "@components/ui/Card.tsx";
 
 // -----------------------------------------------------------------------------
 // Config
 // -----------------------------------------------------------------------------
-const ICECAST_STREAM_URL = "https://radio.guildedthorn.com"; // <your-mountpoint> can be added if needed
+const ICECAST_STREAM_URL = "https://radio.guildedthorn.com";
 const ICECAST_STATUS_URL = "https://radio.guildedthorn.com/status-json.xsl";
 
 const isLocal = window.location.hostname === "localhost";
 const API_URL = isLocal
 	? "https://localhost:7101/chathub"
 	: "https://guildedthorn.com/chathub";
-
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -28,6 +27,7 @@ interface IcecastSource {
 	artist?: string;
 	server_name?: string;
 	server_description?: string;
+	listeners?: number;
 }
 
 const parseIcecastMetadata = (src: IcecastSource | IcecastSource[] | undefined) => {
@@ -52,8 +52,6 @@ const parseIcecastMetadata = (src: IcecastSource | IcecastSource[] | undefined) 
 	};
 };
 
-
-
 // -----------------------------------------------------------------------------
 // Component
 // -----------------------------------------------------------------------------
@@ -61,7 +59,6 @@ function Radio() {
 	// ----------------------------- State --------------------------------------
 	const [playing, setPlaying] = useState(false);
 	const [volume, setVolume] = useState(0.8);
-	// const [volume] = useState(0.8);
 	const [muted, setMuted] = useState(false);
 	const [metadata, setMetadata] = useState({
 		title: "Loading…",
@@ -72,11 +69,14 @@ function Radio() {
 	const [message, setMessage] = useState("");
 	const [connecting, setConnecting] = useState(true);
 	const [, setOnlineUsers] = useState<string[]>([]);
+	const [isOnline, setIsOnline] = useState(true); // ✅ new state
+	const [listeners, setListeners] = useState<number>(0);
+
 
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const connectionRef = useRef<ReturnType<typeof HubConnectionBuilder.prototype.build>>(null);
 
-
+	// ----------------------------- Chat send ----------------------------------
 	const sendMessage = async () => {
 		if (!message.trim()) return;
 		const conn = connectionRef.current;
@@ -86,7 +86,7 @@ function Radio() {
 		}
 
 		const payload = {
-			user: "GuildedThorn", // replace with actual user from auth context
+			user: "GuildedThorn", // TODO: replace with actual user from auth
 			content: message,
 			timestamp: new Date().toISOString(),
 		};
@@ -99,10 +99,8 @@ function Radio() {
 		}
 	};
 
-
 	// ----------------------------- Audio + Meta -------------------------------
 	useEffect(() => {
-		// Create audio element lazily (SSR‑safe)
 		if (!audioRef.current) {
 			audioRef.current = new Audio(ICECAST_STREAM_URL);
 			audioRef.current.preload = "auto";
@@ -114,17 +112,35 @@ function Radio() {
 		const fetchMetadata = async () => {
 			try {
 				const res = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
+				if (!res.ok) new Error("Bad response");
 				const data = (await res.json()) as any;
-				const parsed = parseIcecastMetadata(data?.icestats?.source);
+
+				const src = data?.icestats?.source;
+				if (!src) {
+					setIsOnline(false);
+					setMetadata({ title: "Stream Offline", artist: "" });
+					setListeners(0); // reset to 0 when offline
+					return;
+				}
+
+				setIsOnline(true);
+				const parsed = parseIcecastMetadata(src);
 				setMetadata(parsed);
+
+				// ✅ Extract listeners (handle array vs single object)
+				const entry = Array.isArray(src) ? src[0] : src;
+				setListeners(entry.listeners ?? 0);
 			} catch (err) {
 				console.error("Failed to fetch Icecast metadata", err);
+				setIsOnline(false);
+				setMetadata({ title: "Stream Offline", artist: "" });
+				setListeners(0);
 			}
 		};
 
+
 		let interval: NodeJS.Timeout | undefined;
 
-		// Loading indicator hooks
 		const handlePlaying = () => setLoading(false);
 		const handleWaiting = () => setLoading(true);
 
@@ -132,10 +148,12 @@ function Radio() {
 		audio.addEventListener("waiting", handleWaiting);
 
 		if (playing) {
-			// Start stream & metadata polling
 			fetchMetadata();
-			interval = setInterval(fetchMetadata, 5000);
-			audio.play().catch(console.error);
+			interval = setInterval(fetchMetadata, 5000); // ✅ every 5s
+			audio.play().catch(() => {
+				setIsOnline(false);
+				setPlaying(false);
+			});
 		} else {
 			audio.pause();
 		}
@@ -153,14 +171,10 @@ function Radio() {
 	useEffect(() => {
 		const createConnection = () => {
 			return new HubConnectionBuilder()
-				.withUrl(API_URL, {
-					withCredentials: true,  // important for cookies/auth
-					// transport: HttpTransportType.WebSockets,  <--- REMOVE this line!
-				})
+				.withUrl(API_URL, { withCredentials: true })
 				.configureLogging(LogLevel.Information)
 				.build();
 		};
-
 
 		const startConnection = async () => {
 			if (connectionRef.current) return;
@@ -168,7 +182,7 @@ function Radio() {
 			connectionRef.current = conn;
 
 			conn.onclose(() => {
-				console.warn("SignalR disconnected, retrying in 5 s…");
+				console.warn("SignalR disconnected, retrying in 5 s…");
 				setConnecting(true);
 				setTimeout(startConnection, 5000);
 			});
@@ -181,38 +195,29 @@ function Radio() {
 				conn.on("ReceiveMessage", (user, msg, timestamp) => {
 					setMessages((prev) => [
 						...prev,
-						{
-							user,
-							message: msg,
-							timestamp: new Date(timestamp).toLocaleTimeString(),
-						},
+						{ user, message: msg, timestamp: new Date(timestamp).toLocaleTimeString() },
 					]);
 				});
 
 				conn.on("UserConnected", (id) => setOnlineUsers((prev) => [...prev, id]));
-				conn.on("UserDisconnected", (id) =>
-					setOnlineUsers((prev) => prev.filter((u) => u !== id))
-				);
+				conn.on("UserDisconnected", (id) => setOnlineUsers((prev) => prev.filter((u) => u !== id)));
 			} catch (err) {
 				console.error("SignalR connection failed", err);
 				setTimeout(startConnection, 5000);
 			}
 		};
 
-		// Fire async function (don't return it!)
 		void startConnection();
-
-		// ✅ Return sync cleanup function
 		return () => {
-			if (connectionRef.current) {
-				void connectionRef.current.stop(); // silence Promise warning
-			}
+			if (connectionRef.current) void connectionRef.current.stop();
 		};
 	}, []);
 
-
 	// ----------------------------- UI helpers ---------------------------------
-	const togglePlayback = () => setPlaying((p) => !p);
+	const togglePlayback = () => {
+		if (!isOnline) return; // ✅ don’t play if offline
+		setPlaying((p) => !p);
+	};
 
 	const toggleMute = () => {
 		const audio = audioRef.current;
@@ -235,67 +240,91 @@ function Radio() {
 
 	// ----------------------------- Render -------------------------------------
 	return (
-			<div className="section">
-				<Card title={"Player"}>
-					<div className="p-6">
-						<div className="space-y-4">
-							<div className="text-center space-y-1">
-								<h2 className="font-semibold text-lg truncate">{metadata.title}</h2>
-								<p className="text-sm text-gray-500 truncate">{metadata.artist}</p>
+		<div className="section">
+			<h1>Welcome to the ThornRadio :)</h1>
+			<p>There are currently {listeners} listener{listeners !== 1 ? "s" : ""}</p>
+
+			<Card title={"Player"}>
+				<div className="p-6">
+					<div className="space-y-4">
+						<div className="text-center space-y-1">
+							<h2 className="font-semibold text-lg truncate">{metadata.title}</h2>
+							<p className="text-sm text-gray-500 truncate">{metadata.artist}</p>
+						</div>
+
+						{loading && isOnline && (
+							<div className="flex justify-center">
+								<RefreshCw className="animate-spin" size={24} />
 							</div>
+						)}
 
-							{loading && (
-								<div className="flex justify-center">
-									<RefreshCw className="animate-spin" size={24} />
-								</div>
-							)}
+						<div className="flex items-center justify-center space-x-4">
+							<Button variant="outline" onClick={toggleMute} disabled={!isOnline}>
+								{muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+							</Button>
 
-							<div className="flex items-center justify-center space-x-4">
-								<Button variant="outline" onClick={toggleMute} className="hover:bg-gray-100">
-									{muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-								</Button>
+							<Button
+								variant="outline"
+								onClick={togglePlayback}
+								className="w-16 h-16 rounded-full"
+								disabled={!isOnline}
+							>
+								{playing ? <Pause size={32} /> : <Play size={32} />}
+							</Button>
 
-								<Button variant="outline" onClick={togglePlayback} className="w-16 h-16 rounded-full">
-									{playing ? <Pause size={32} /> : <Play size={32} />}
-								</Button>
-
-								<div className="w-24">
-									<Slider value={[volume]} max={1} step={0.01} onValueChange={handleVolumeChange} />
-								</div>
+							<div className="w-24">
+								<Slider
+									value={[volume]}
+									max={1}
+									step={0.01}
+									onValueChange={handleVolumeChange}
+									disabled={!isOnline}
+								/>
 							</div>
 						</div>
+
+						{!isOnline && (
+							<div className="text-center text-red-500 font-semibold mt-4">
+								Stream Offline
+							</div>
+						)}
 					</div>
-				</Card>
-				<Card title={"Chat"}>
-					{/* Chat */}
-							<div className="space-y-2 flex-1">
-								{messages.length === 0 ? (
-									<div>No messages yet</div>
-								) : (
-									messages.map((m, i) => (
-										<div key={i} className="border-b py-2">
-											<strong>{m.user}:</strong> {m.message}
-										</div>
-									))
-								)}
-							</div>
+				</div>
+			</Card>
 
-							{connecting && <div className="text-center text-gray-500">Connecting to chat…</div>}
-
-							<div className="flex items-center space-x-2">
-								<input
-									type="text"
-									value={message}
-									onChange={(e) => setMessage(e.target.value)}
-									placeholder="Type a message"
-									className="flex-1 p-2 border rounded"
-								/>
-								<button onClick={sendMessage} className="p-2 bg-blue-500 text-white rounded">
-									Send
-								</button>
+			<Card title={"Chat"}>
+				<div className="space-y-2 flex-1">
+					{messages.length === 0 ? (
+						<div>No messages yet</div>
+					) : (
+						messages.map((m, i) => (
+							<div key={i} className="border-b py-2">
+								<strong>{m.user}:</strong> {m.message}
 							</div>
-				</Card>
-			</div>
+						))
+					)}
+				</div>
+
+				{connecting && <div className="text-center text-gray-500">Connecting to chat…</div>}
+
+				<div className="flex items-center space-x-2">
+					<input
+						type="text"
+						value={message}
+						onChange={(e) => setMessage(e.target.value)}
+						placeholder="Type a message"
+						className="flex-1 p-2 border rounded"
+					/>
+					<button
+						onClick={sendMessage}
+						className="p-2 bg-blue-500 text-white rounded"
+						disabled={connecting}
+					>
+						Send
+					</button>
+				</div>
+			</Card>
+		</div>
 	);
 }
 

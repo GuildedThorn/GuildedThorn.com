@@ -22,6 +22,11 @@ import GalleryUpload from "@pages/GalleryUpload.tsx";
 import GalleryPost from "@components/Gallery/GalleryPost.tsx";
 import GalleryList from "@components/Gallery/GalleryList.tsx";
 import GalleryLayout from "@layouts/GalleryLayout.tsx";
+import RegexTester from "@pages/RegexTester.tsx";
+import LoremIpsumGenerator from "@pages/LoremIpsumGenerator.tsx";
+import ColorConverter from "@pages/ColorConverter.tsx";
+import UUIDGenerator from "@pages/UUIDGenerator.tsx";
+
 
 export default function AppRoutes() {
     return (
@@ -35,7 +40,12 @@ export default function AppRoutes() {
                     <Route path="contact" element={<Contact />} />
                     <Route path="net" element={<ThornNet />} />
                     <Route path="stream" element={<Stream />} />
-                    <Route path="pomodoro" element={<PomodoroTimer/>} />
+                    
+                    <Route path="tools/pomodoro" element={<PomodoroTimer/>} />
+                    <Route path="tools/regex" element={<RegexTester/>} />
+                    <Route path="tools/loremipsum" element={<LoremIpsumGenerator />} />
+                    <Route path="tools/colorconverter" element={<ColorConverter />} />
+                    <Route path="tools/uuidgenerator" element={<UUIDGenerator />} />
 
                     {/* Protected routes */}
                     <Route element={<ProtectedRouter />}>

@@ -10,7 +10,7 @@ namespace GuildedThorn.com.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]
-public class GuestBookController(MongoDbService mongoDbService) : ControllerBase {
+public class GuestBookController(MongoDbService mongoDbService, RabbitMqService rabbitMqService) : ControllerBase {
 
     [Authorize(Policy = "PrivilegedOnly")]
     [HttpPost("message")]      // keep the route short & REST‑y
@@ -43,6 +43,8 @@ public class GuestBookController(MongoDbService mongoDbService) : ControllerBase
         // ──────────────────────────────────
         var doc = new Models.GuestBookMessages { Username = username, Message = message };
         await coll.InsertOneAsync(doc);
+        
+        await rabbitMqService.PublishGuestbookMessageAsync(username, message);
 
         return Ok("Guest‑book message created successfully.");
     }
