@@ -11,4 +11,5 @@
 /wwwroot
 
 # Credential Files
+/Secrets
 *.env
