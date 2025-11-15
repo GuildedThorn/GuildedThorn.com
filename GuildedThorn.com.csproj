@@ -4,9 +4,10 @@
     <TargetFramework>net9.0</TargetFramework>
     <SpaRoot>GuildedThorn.com-Frontend/</SpaRoot>
     <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
-    <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
+    <SpaProxyLaunchCommand>bun run dev</SpaProxyLaunchCommand>
     <SpaProxyApplyProxyToSpaDevelopmentServer>true</SpaProxyApplyProxyToSpaDevelopmentServer>
     <Nullable>enable</Nullable>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
@@ -371,10 +372,10 @@
     </Content>
   </ItemGroup>
 
-  <!-- On publish: install and build Vite app (which outputs to wwwroot directly) -->
-  <Target Name="BuildReactApp" BeforeTargets="Publish">
-    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
-    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
-  </Target>
+    <Target Name="BuildReactApp" BeforeTargets="Publish" Condition="'$(SkipFrontendBuild)' != 'true'">
+        <Exec WorkingDirectory="$(SpaRoot)" Command="bun install" />
+        <Exec WorkingDirectory="$(SpaRoot)" Command="bun run build" />
+    </Target>
+
 
 </Project>
