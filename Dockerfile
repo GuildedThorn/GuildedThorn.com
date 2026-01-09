@@ -28,7 +28,7 @@ RUN mkdir -p /wwwroot \
  && if [ -d /app/dist ]; then cp -a /app/dist/. /wwwroot/; fi \
  && if [ -d /wwwroot ] && [ "$(ls -A /wwwroot)" = "" ]; then echo "/wwwroot empty after copy"; fi
 
-# --------------- .NET build + publish ---------------
+# --------------- .NET build + publish ------------v---
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 ARG BACKEND_PROJECT=GuildedThorn.com.csproj
@@ -55,7 +55,6 @@ RUN dotnet build "${BACKEND_PROJECT}" -c ${BUILD_CONFIGURATION} -o /app/build
 FROM build AS publish
 # Skip the csproj frontend Exec target (we already provided prebuilt assets)
 RUN dotnet publish "${BACKEND_PROJECT}" -c ${BUILD_CONFIGURATION} -o ./publish /p:UseAppHost=false /p:SkipFrontendBuild=true
-
 
 # --------------- Final runtime ---------------
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
