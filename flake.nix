@@ -24,13 +24,6 @@
           #   nix run nixpkgs#prefetch-npm-deps -- GuildedThorn.com-Frontend/package-lock.json
           npmDepsHash = "sha256-95ZHpeMmf5QidbkVi+B9vJBVup9cyuNHURwZYvB8gig=";
 
-          # The visualizer plugin tries to open a browser after the build,
-          # which is impossible inside the Nix sandbox.
-          postPatch = ''
-            substituteInPlace vite.config.ts \
-              --replace-fail "visualizer({ open: true })" "visualizer({ open: false })"
-          '';
-
           # vite.config.ts writes to ../wwwroot (one level above the source root)
           installPhase = ''
             runHook preInstall

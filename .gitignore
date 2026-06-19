@@ -10,8 +10,6 @@
 /node_modules
 /dist
 /wwwroot
-# This is a Bun project — track bun.lock, ignore the npm lockfile
-package-lock.json
 # rollup-plugin-visualizer bundle-stats output
 GuildedThorn.com-Frontend/stats.html
 
