@@ -302,10 +302,17 @@ app.Run();
 static Task ServeSpaIndex(HttpContext context, int statusCode) {
     context.Response.StatusCode = statusCode;
     context.Response.ContentType = "text/html; charset=utf-8";
-    return context.Response.SendFileAsync(Path.Combine(
+
+    var indexPath = Path.Combine(
         context.RequestServices.GetRequiredService<IHostEnvironment>().ContentRootPath,
         "wwwroot",
-        "index.html"));
+        "index.html");
+
+    // The frontend may not be built (backend tests / CI) — return the status and
+    // content-type without the SPA shell rather than throwing on a missing file.
+    return File.Exists(indexPath)
+        ? context.Response.SendFileAsync(indexPath)
+        : Task.CompletedTask;
 }
 
 // Exposed so integration tests can boot the real app via
