@@ -1,36 +1,58 @@
-import { Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+
+// Shell + guard load eagerly (tiny, needed on every route).
 import MainLayout from '@layouts/MainLayout';
-
-import App from '@pages/App.tsx';
-import Stream from '@pages/Stream.tsx';
-import Contact from '@pages/Contact.tsx';
-import Radio from '@pages/Radio.tsx';
-import Login from '@pages/Login.tsx';
-import Register from '@pages/Register.tsx';
-import GuestBook from "@components/GuestBook.tsx";
-
 import ProtectedRouter from '@routes/ProtectedRouter.tsx';
-import UserSettings from "@pages/UserSettings.tsx";
-import ThornNet from "@pages/ThornNet.tsx";
-import BlogLayout from "@layouts/BlogLayout.tsx";
-import BlogList from '@components/Blog/BlogList';
-import BlogPost from "@components/Blog/BlogPost.tsx";
-import BlogUpload from "@pages/BlogUpload.tsx";
-import {Suspense} from "react";
-import PomodoroTimer from "@pages/PomodoroTimer.tsx";
-import GalleryUpload from "@pages/GalleryUpload.tsx";
-import GalleryPost from "@components/Gallery/GalleryPost.tsx";
-import GalleryList from "@components/Gallery/GalleryList.tsx";
-import GalleryLayout from "@layouts/GalleryLayout.tsx";
-import RegexTester from "@pages/RegexTester.tsx";
-import LoremIpsumGenerator from "@pages/LoremIpsumGenerator.tsx";
-import ColorConverter from "@pages/ColorConverter.tsx";
-import UUIDGenerator from "@pages/UUIDGenerator.tsx";
 
+// Everything else is code-split so a route only ships its own JS
+// (e.g. ReactFlow on /net, SignalR on /radio, markdown+highlight on /blog).
+const App = lazy(() => import('@pages/App.tsx'));
+const Stream = lazy(() => import('@pages/Stream.tsx'));
+const Contact = lazy(() => import('@pages/Contact.tsx'));
+const Radio = lazy(() => import('@pages/Radio.tsx'));
+const Login = lazy(() => import('@pages/Login.tsx'));
+const Register = lazy(() => import('@pages/Register.tsx'));
+const GuestBook = lazy(() => import('@components/GuestBook.tsx'));
+const UserSettings = lazy(() => import('@pages/UserSettings.tsx'));
+const ThornNet = lazy(() => import('@pages/ThornNet.tsx'));
+const BlogLayout = lazy(() => import('@layouts/BlogLayout.tsx'));
+const BlogList = lazy(() => import('@components/Blog/BlogList'));
+const BlogPost = lazy(() => import('@components/Blog/BlogPost.tsx'));
+const BlogUpload = lazy(() => import('@pages/BlogUpload.tsx'));
+const GalleryUpload = lazy(() => import('@pages/GalleryUpload.tsx'));
+const GalleryPost = lazy(() => import('@components/Gallery/GalleryPost.tsx'));
+const GalleryList = lazy(() => import('@components/Gallery/GalleryList.tsx'));
+const GalleryLayout = lazy(() => import('@layouts/GalleryLayout.tsx'));
+const Tools = lazy(() => import('@pages/Tools.tsx'));
+const PrivacyPolicy = lazy(() => import('@pages/PrivacyPolicy.tsx'));
+const CookiePolicy = lazy(() => import('@pages/CookiePolicy.tsx'));
+const Resume = lazy(() => import('@pages/Resume.tsx'));
+const Projects = lazy(() => import('@pages/Projects.tsx'));
+const Inbox = lazy(() => import('@pages/Inbox.tsx'));
+const NotFound = lazy(() => import('@pages/NotFound.tsx'));
+const Uses = lazy(() => import('@pages/Uses.tsx')); // /uses page — delete this line + its <Route> to remove
+
+
+// Old per-tool URLs (e.g. /tools/regex) land on the matching section of /tools
+function ToolRedirect() {
+    const { tool } = useParams<{ tool: string }>();
+    return <Navigate to={{ pathname: "/tools", hash: tool }} replace />;
+}
 
 export default function AppRoutes() {
     return (
-        <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+        <Suspense
+            fallback={
+                <div className="flex min-h-[60vh] items-center justify-center">
+                    <div
+                        className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary"
+                        role="status"
+                        aria-label="Loading"
+                    />
+                </div>
+            }
+        >
             <Routes>
                 <Route element={<MainLayout />}>
                     {/* Public routes */}
@@ -40,34 +62,40 @@ export default function AppRoutes() {
                     <Route path="contact" element={<Contact />} />
                     <Route path="net" element={<ThornNet />} />
                     <Route path="stream" element={<Stream />} />
-                    
-                    <Route path="tools/pomodoro" element={<PomodoroTimer/>} />
-                    <Route path="tools/regex" element={<RegexTester/>} />
-                    <Route path="tools/loremipsum" element={<LoremIpsumGenerator />} />
-                    <Route path="tools/colorconverter" element={<ColorConverter />} />
-                    <Route path="tools/uuidgenerator" element={<UUIDGenerator />} />
+
+                    <Route path="tools" element={<Tools />} />
+                    {/* Old per-tool URLs redirect to their section on the combined page */}
+                    <Route path="tools/:tool" element={<ToolRedirect />} />
+
+                    <Route path="privacy" element={<PrivacyPolicy />} />
+                    <Route path="cookies" element={<CookiePolicy />} />
+                    <Route path="resume" element={<Resume />} />
+                    <Route path="projects" element={<Projects />} />
+                    <Route path="uses" element={<Uses />} />
+
+                    {/* Blog & gallery are public to read; upload/edit stay owner-only below */}
+                    <Route path="blog/pages" element={<BlogLayout />}>
+                        <Route index element={<BlogList />} />
+                        <Route path=":id" element={<BlogPost />} />
+                    </Route>
+                    <Route path="gallery/images" element={<GalleryLayout />}>
+                        <Route index element={<GalleryList />} />
+                        <Route path=":id" element={<GalleryPost />} />
+                    </Route>
 
                     {/* Protected routes */}
                     <Route element={<ProtectedRouter />}>
                         <Route path="settings" element={<UserSettings />} />
+                        <Route path="inbox" element={<Inbox />} />
                         <Route path="guestbook" element={<GuestBook />} />
                         <Route path="radio" element={<Radio />} />
 
                         <Route path="blog/upload" element={<BlogUpload />} />
-                        <Route path="blog/pages" element={<BlogLayout />}>
-                            <Route index element={<BlogList />} />
-                            <Route path=":id" element={<BlogPost />} />
-                        </Route>
-
                         <Route path="gallery/upload" element={<GalleryUpload/>} />
-                        <Route path="gallery/images" element={<GalleryLayout/>}>
-                            <Route index element={<GalleryList/>} />
-                            <Route path=":id" element={<GalleryPost />} />
-                        </Route>
                     </Route>
 
                     {/* Catch-all */}
-                    <Route path="*" element={<App />} />
+                    <Route path="*" element={<NotFound />} />
                 </Route>
             </Routes>
         </Suspense>

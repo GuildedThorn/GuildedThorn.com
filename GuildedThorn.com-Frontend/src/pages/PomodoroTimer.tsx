@@ -1,89 +1,45 @@
-import { useState, useEffect, useRef } from "react";
 import { Card } from "@components/ui/Card.tsx";
 import { Button } from "@components/ui/Button.tsx";
+import { usePomodoro } from "@components/PomodoroContext";
 
+// The timer state now lives in <PomodoroProvider> (above the router) so it keeps
+// running when you leave /tools — this is just the full UI for it.
 const PomodoroTimer = () => {
-    const WORK_MINUTES = 25;
-    const BREAK_MINUTES = 5;
+    const { mode, running, secondsLeft, completedSessions, toggle, reset } = usePomodoro();
 
-    const [secondsLeft, setSecondsLeft] = useState(WORK_MINUTES * 60);
-    const [isRunning, setIsRunning] = useState(false);
-    const [mode, setMode] = useState<"work" | "break">("work");
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-    const [completedSessions, setCompletedSessions] = useState<number[]>(() => {
-        return JSON.parse(localStorage.getItem("pomodoroSessions") || "[]");
-    });
-
-    // Timer effect
-    useEffect(() => {
-        if (isRunning && secondsLeft > 0) {
-            timerRef.current = setTimeout(() => {
-                setSecondsLeft(secondsLeft - 1);
-            }, 1000);
-        } else if (secondsLeft === 0 && isRunning) {
-            // Play alert
-            alert(mode === "work" ? "Work session complete! 🍅" : "Break over! 🛌");
-
-            if (mode === "work") {
-                // Log completed work session
-                const timestamp = Date.now();
-                const updatedSessions = [...completedSessions, timestamp];
-                setCompletedSessions(updatedSessions);
-                localStorage.setItem("pomodoroSessions", JSON.stringify(updatedSessions));
-            }
-
-            // Switch mode
-            if (mode === "work") {
-                setMode("break");
-                setSecondsLeft(BREAK_MINUTES * 60);
-            } else {
-                setMode("work");
-                setSecondsLeft(WORK_MINUTES * 60);
-            }
-        }
-
-        return () => {
-            if (timerRef.current) {
-                clearTimeout(timerRef.current);
-            }
-        };
-    }, [secondsLeft, isRunning, mode, completedSessions]);
-
-    // Helper to format time
     const formatTime = (totalSeconds: number) => {
-        const minutes = Math.floor(totalSeconds / 60)
-            .toString()
-            .padStart(2, "0");
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
         const seconds = (totalSeconds % 60).toString().padStart(2, "0");
         return `${minutes}:${seconds}`;
     };
 
     return (
-        <div style={{ textAlign: "center", fontFamily: "sans-serif" }}>
-            <Card title={"Pomodoro"}>
-                <h1 className="font-[Caveat,_cursive] text-2xl mb-2">Pomodoro Timer</h1>
-                <h2>{mode === "work" ? "Work Session" : "Break Session"}</h2>
-                <div style={{ fontSize: "3rem", margin: "20px 0" }}>
+        <div className="h-full text-center">
+            <Card className="h-full">
+                <h1 className="text-3xl mb-3">Pomodoro Timer</h1>
+                <span
+                    className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${
+                        mode === "work"
+                            ? "bg-primary/10 text-primary"
+                            : "bg-success/10 text-success"
+                    }`}
+                >
+                    {mode === "work" ? "Work Session" : "Break Session"}
+                </span>
+
+                <div className="my-6 text-6xl font-bold tabular-nums tracking-tight">
                     {formatTime(secondsLeft)}
                 </div>
-                <Button onClick={() => setIsRunning(!isRunning)} variant={"outline"}>
-                    {isRunning ? "Pause" : "Start"}
-                </Button>
-                <Button
-                    onClick={() => {
-                        setIsRunning(false);
-                        setMode("work");
-                        setSecondsLeft(WORK_MINUTES * 60);
-                    }}
-                    variant={"outline"}
-                    style={{ marginLeft: "10px" }}
-                >
-                    Reset
-                </Button>
 
-                <h3 style={{ marginTop: "30px" }}>Completed Work Sessions</h3>
-                <ul>
+                <div className="flex justify-center gap-3">
+                    <Button onClick={toggle}>{running ? "Pause" : "Start"}</Button>
+                    <Button onClick={reset} variant={"outline"}>
+                        Reset
+                    </Button>
+                </div>
+
+                <h3 className="mt-8 font-semibold">Completed Work Sessions</h3>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
                     {completedSessions.map((ts, idx) => (
                         <li key={idx}>{new Date(ts).toLocaleString()}</li>
                     ))}

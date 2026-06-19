@@ -1,118 +1,213 @@
 @import "tailwindcss";
-@import "@fontsource/caveat";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@plugin "@tailwindcss/typography";
 
-/* =============================
-   Root Layout + Resets
-============================= */
+@theme {
+	--font-sans: "Geist Variable", ui-sans-serif, system-ui, "Segoe UI", Roboto,
+		"Helvetica Neue", Arial, "Noto Sans", sans-serif;
+	--font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo,
+		Monaco, Consolas, "Liberation Mono", monospace;
 
-html,
-body,
-#root,
-.app {
-	height: 100%;
-	width: 100%;
-	max-width: 100vw;
-	margin: 0;
-	padding: 0;
-	color: #1f2937; /* gray-800 */
-	background-color: #ffffff;
-	font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont,
-	"Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	text-rendering: optimizeLegibility;
-	font-synthesis: none;
-	line-height: 1.5;
-	font-weight: 400;
-	overflow-x: hidden;
+	/* Semantic tokens — single source of truth for the palette.
+	   Light: white surfaces, gray-800 text, blue-600 accent.
+	   Dark: gray-900/800 surfaces, gray-100 text, blue-400/500 accent. */
+	--color-background: light-dark(var(--color-white), var(--color-gray-900));
+	--color-foreground: light-dark(var(--color-gray-800), var(--color-gray-100));
+
+	--color-card: light-dark(var(--color-white), var(--color-gray-800));
+	--color-card-foreground: var(--color-foreground);
+
+	--color-muted: light-dark(var(--color-gray-100), var(--color-gray-700));
+	--color-muted-foreground: light-dark(var(--color-gray-500), var(--color-gray-400));
+
+	--color-accent: light-dark(var(--color-gray-100), var(--color-gray-700));
+	--color-accent-foreground: var(--color-foreground);
+
+	--color-primary: light-dark(var(--color-blue-600), var(--color-blue-500));
+	--color-primary-foreground: var(--color-white);
+
+	--color-destructive: light-dark(var(--color-red-600), var(--color-red-500));
+	--color-destructive-foreground: var(--color-white);
+
+	--color-success: light-dark(var(--color-green-600), var(--color-green-500));
+
+	--color-border: light-dark(var(--color-gray-200), var(--color-gray-700));
+	--color-input: light-dark(var(--color-gray-300), var(--color-gray-600));
+	--color-ring: var(--color-blue-400);
+
+	/* Navy surfaces — deep blue panel palette (e.g. the network map). */
+	--color-navy: #0a0f1f;
+	--color-navy-surface: #15203a;
+	--color-navy-border: #2a3a5e;
+	--color-navy-foreground: #e2e8f0;
+	--color-navy-muted: #94a3b8;
+
+	/* Corner radius — every rounded-* utility derives from one knob.
+	   Change --radius once to restyle every corner in the app. */
+	--radius: 0.75rem;
+	--radius-sm: calc(var(--radius) - 0.25rem);
+	--radius-md: calc(var(--radius) - 0.125rem);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 0.25rem);
+	--radius-2xl: calc(var(--radius) + 0.5rem);
 }
 
-/* =============================
-   Section Layouts
-============================= */
+@layer base {
+	html {
+		color-scheme: light dark;
+		scrollbar-color: color-mix(in srgb, var(--color-slate-500) 40%, transparent)
+			transparent;
+	}
 
-.section {
-	@apply grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-8 py-3;
-}
-
-/* =============================
-   Headings
-============================= */
-
-h1 {
-	font-size: 3rem; /* Tailwind: text-4xl */
-	line-height: 1.1;
-	font-weight: 700;
-}
-
-/* =============================
-   Anchors and Buttons
-============================= */
-
-a {
-	text-decoration: none;
-	color: inherit;
-	transition: color 0.2s ease;
-}
-
-a:hover {
-	color: #2563eb; /* blue-600 */
-}
-
-button {
-	font-family: inherit;
-	cursor: pointer;
-	background: none;
-	border: none;
-	padding: 0;
-	color: inherit;
-	transition: color 0.2s ease;
-}
-
-button:hover {
-	color: #2563eb;
-}
-
-/* =============================
-   Dark Mode (auto)
-============================= */
-
-@media (prefers-color-scheme: dark) {
 	html,
 	body,
-	#root,
-	.app {
-		background-color: #0f172a; /* slate-900 */
-		color: #f8fafc; /* slate-50 */
+	#root {
+		height: 100%;
+	}
+
+	body {
+		overflow-x: clip;
+		color: var(--color-foreground);
+		background-color: var(--color-background);
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+		font-synthesis: none;
+	}
+
+	#root {
+		margin-inline: auto;
+		text-align: center;
+	}
+
+	/* Display headings — Geist looks sharpest tight + heavy. */
+	h1 {
+		font-size: 3rem;
+		line-height: 1.1;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+	}
+
+	h2,
+	h3 {
+		letter-spacing: -0.015em;
+	}
+
+	a,
+	button {
+		transition: color 0.2s ease;
+	}
+
+	button {
+		cursor: pointer;
 	}
 
 	a:hover,
 	button:hover {
-		color: #60a5fa; /* blue-400 */
+		color: light-dark(var(--color-blue-600), var(--color-blue-400));
 	}
 }
 
-/* =============================
-   Utility: Scrollbars (optional)
-============================= */
+@layer components {
+	.section {
+		/* [&>*]:min-w-0 — grid items default to min-width:auto, which lets a wide
+		   child (long text, a table) blow the column past the viewport on mobile. */
+		@apply grid grid-cols-1 gap-4 py-3 lg:grid-cols-2 lg:gap-8 [&>*]:min-w-0;
+	}
 
-::-webkit-scrollbar {
-	width: 10px;
+	/* The one content-width class to rule them all: every routed page's root
+	   applies `.page` so content lines up EXACTLY with the NavBar and Footer
+	   cards. Those cards are max-w-7xl (80rem) centered, with their px-3
+	   (0.75rem/side) gutter on a full-width parent — i.e. OUTSIDE the cap, so
+	   each card spans the full 80rem on wide screens. We reproduce that here
+	   with a width calc rather than `max-w-7xl px-3` (which would put the gutter
+	   INSIDE the cap and inset content 0.75rem/side on wide screens).
+
+	   `.page` also owns the standard top/bottom page padding so every route has
+	   the same vertical rhythm — pages must NOT add their own `py-*`, width,
+	   centering, or horizontal gutters. (Print zeroes this; see @media print.) */
+	.page {
+		@apply mx-auto py-8 sm:py-12;
+		width: min(100% - 1.5rem, 80rem);
+	}
+
+	/* The shared surface for every card / form panel. */
+	.panel {
+		@apply rounded-xl border border-border bg-card text-card-foreground shadow-sm;
+	}
+
+	/* An inset surface for content nested inside a .panel / Card
+	   (muted background so it reads against the card it sits on). */
+	.tile {
+		@apply rounded-xl border border-border bg-muted;
+	}
+
+	/* Standard form field label. */
+	.field-label {
+		@apply mb-1.5 block text-sm font-medium text-foreground/80;
+	}
+
+	/* Small mono uppercase accent label (Geist Mono) for stats, meta, etc. */
+	.eyebrow {
+		@apply font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground;
+	}
+
+	.nav-link {
+		@apply inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-sm
+			font-medium text-foreground/80 transition-colors hover:bg-muted
+			hover:text-primary focus-visible:outline-none focus-visible:ring-2
+			focus-visible:ring-ring;
+	}
 }
 
-::-webkit-scrollbar-thumb {
-	background-color: rgba(100, 116, 139, 0.4); /* slate-500 */
-	border-radius: 6px;
+/* Respect users who ask for reduced motion: neutralize transitions, animations,
+   hover lifts, pulses, and smooth scrolling across the whole site. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
 }
 
-::-webkit-scrollbar-thumb:hover {
-	background-color: rgba(100, 116, 139, 0.6);
-}
+@media print {
+	/* Force every light-dark() token to its LIGHT value, so a visitor printing
+	   from a dark-mode OS still gets clean black-on-white output instead of
+	   light text that's invisible on paper. Shrinking the root font-size scales
+	   the whole rem grid (text + spacing) down so the résumé fits a single page
+	   — column widths are %-based, so only height compresses, not the width. */
+	/* `!important` so it overrides the inline color-scheme the theme toggle sets
+	   on <html> — otherwise a dark-theme visitor would print invisible text. */
+	html {
+		color-scheme: light !important;
+		font-size: 13px;
+	}
 
-/* =============================
-   Accessibility Helpers
-============================= */
+	/* Suppress the browser's own print header/footer (page title, URL, date,
+	   "1 of 1" page numbers): zeroing the page margin removes the margin box
+	   they render in. We then re-create comfortable edges with padding on the
+	   content itself. (The print dialog's "Headers and footers" toggle is the
+	   ultimate control, but this handles it automatically in Chrome/Edge.) */
+	@page {
+		margin: 0;
+	}
 
-.sr-only {
-	@apply sr-only;
+	.page {
+		width: 100%;
+		padding: 0.5in 0.55in;
+	}
+
+	#root > * {
+		min-height: 0 !important;
+	}
+
+	/* Keep individual entries and list items from splitting across pages. */
+	li,
+	section > div > div {
+		break-inside: avoid;
+	}
 }

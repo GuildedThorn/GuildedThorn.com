@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Input } from "@components/ui/Input";
+import { Textarea } from "@components/ui/TextArea";
 
 export default function RegexTester() {
     const [text, setText] = useState("");
@@ -9,7 +11,7 @@ export default function RegexTester() {
     useEffect(() => {
         try {
             const flagString = Object.entries(flags)
-                .filter(([_, v]) => v)
+                .filter(([, v]) => v)
                 .map(([k]) => k)
                 .join("");
             const regex = new RegExp(pattern, flagString);
@@ -27,14 +29,14 @@ export default function RegexTester() {
     const highlightMatches = () => {
         if (!pattern) return text;
         const flagString = Object.entries(flags)
-            .filter(([_, v]) => v)
+            .filter(([, v]) => v)
             .map(([k]) => k)
             .join("");
         try {
             const regex = new RegExp(`(${pattern})`, flagString);
             return text.split(regex).map((part, i) =>
                 part && new RegExp(`^${pattern}$`, flagString).test(part) ? (
-                    <mark key={i} className="bg-yellow-200 text-black rounded px-0.5">{part}</mark>
+                    <mark key={i} className="rounded px-0.5 bg-yellow-200 text-black">{part}</mark>
                 ) : (
                     part
                 )
@@ -46,28 +48,31 @@ export default function RegexTester() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto my-6 p-4 border rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">Regex Tester</h2>
+        <div className="panel h-full p-6 text-left">
+            <h2 className="mb-4 text-xl font-bold">Regex Tester</h2>
 
             <div className="mb-4">
-                <label className="block font-medium mb-1">Regex Pattern</label>
-                <input
+                <label htmlFor="regex-pattern" className="field-label">
+                    Regex Pattern
+                </label>
+                <Input
+                    id="regex-pattern"
                     type="text"
                     value={pattern}
                     onChange={(e) => setPattern(e.target.value)}
                     placeholder="e.g. \d{3}-\d{2}-\d{4}"
-                    className="w-full border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="font-mono"
                 />
             </div>
 
-            <div className="flex gap-4 mb-4">
+            <div className="mb-4 flex gap-4">
                 {(["g", "i", "m"] as const).map((flag) => (
-                    <label key={flag} className="flex items-center gap-1">
+                    <label key={flag} className="flex cursor-pointer items-center gap-1.5 font-mono text-sm">
                         <input
                             type="checkbox"
                             checked={flags[flag]}
                             onChange={() => toggleFlag(flag)}
-                            className="w-4 h-4"
+                            className="h-4 w-4 accent-primary"
                         />
                         {flag}
                     </label>
@@ -75,27 +80,32 @@ export default function RegexTester() {
             </div>
 
             <div className="mb-4">
-                <label className="block font-medium mb-1">Text to Test</label>
-                <textarea
+                <label htmlFor="regex-text" className="field-label">
+                    Text to Test
+                </label>
+                <Textarea
+                    id="regex-text"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     rows={6}
-                    className="w-full border rounded px-2 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="font-mono"
                     placeholder="Paste your text here..."
                 />
             </div>
 
             <div className="mb-4">
-                <label className="block font-medium mb-1">Highlighted Matches</label>
-                <div className="w-full border rounded p-2  min-h-[100px] break-words">
+                <p className="mb-1.5 text-sm font-medium text-foreground/80">Highlighted Matches</p>
+                <div className="min-h-24 w-full whitespace-pre-wrap break-words rounded-lg border border-border bg-muted/50 p-3 font-mono text-sm">
                     {highlightMatches()}
                 </div>
             </div>
 
             <div>
-                <label className="block font-medium mb-1">Match Results</label>
-                <ul className="list-disc list-inside max-h-32 overflow-auto border rounded p-2 ">
-                    {matches.length === 0 ? <li>No matches</li> : matches.map((m, i) => <li key={i}>{m}</li>)}
+                <p className="mb-1.5 text-sm font-medium text-foreground/80">Match Results</p>
+                <ul className="max-h-32 list-inside list-disc overflow-auto rounded-lg border border-border bg-muted/50 p-3 font-mono text-sm">
+                    {matches.length === 0
+                        ? <li className="text-muted-foreground">No matches</li>
+                        : matches.map((m, i) => <li key={i}>{m}</li>)}
                 </ul>
             </div>
         </div>

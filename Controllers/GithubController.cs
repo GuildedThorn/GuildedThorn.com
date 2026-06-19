@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -47,4 +48,42 @@ public class GithubController(IHttpClientFactory httpClientFactory) : Controller
 
         return Ok(projects);
     }
+
+    // Most recently pushed-to repos, straight from the GitHub REST API
+    // (the pinned API has no "recently committed" view). Same shape as
+    // getProjects so the SPA can swap between the two without remapping.
+    [AllowAnonymous]
+    [HttpGet("getRecentProjects")]
+    public async Task<ActionResult<List<GithubProject>>> GetRecentGithubProjects() {
+        // Pull a wider page than we render: archived repos are filtered out
+        // below, so over-fetch to still land on a full six afterwards.
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            "https://api.github.com/users/GuildedThorn/repos?sort=pushed&direction=desc&per_page=30&type=owner");
+        request.Headers.UserAgent.ParseAdd("MyCoolApp/1.0");
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode, "Failed to fetch projects.");
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+
+        var projects = doc.RootElement.EnumerateArray()
+            .Where(repo => !(repo.TryGetProperty("archived", out var a) && a.ValueKind == JsonValueKind.True))
+            .Take(6)
+            .Select(repo => new GithubProject {
+                Name = GetString(repo, "name"),
+                Description = GetString(repo, "description"),
+                Language = GetString(repo, "language"),
+                Stars = repo.TryGetProperty("stargazers_count", out var s) ? s.GetInt32() : 0,
+                Forks = repo.TryGetProperty("forks_count", out var f) ? f.GetInt32() : 0,
+            }).ToList();
+
+        return Ok(projects);
+    }
+
+    private static string GetString(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
 }

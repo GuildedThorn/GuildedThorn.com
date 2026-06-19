@@ -28,12 +28,32 @@ public class MongoDbService {
     public IMongoCollection<GuestBookMessages> GetGuestBookCollection() {
         return _database.GetCollection<GuestBookMessages>("GuestBookMessages");
     }
-    
+
+    public IMongoCollection<ContactMessage> GetContactMessageCollection() {
+        return _database.GetCollection<ContactMessage>("ContactMessages");
+    }
+
+    public IMongoCollection<WebAuthnCredential> GetWebAuthnCredentialCollection() {
+        return _database.GetCollection<WebAuthnCredential>("WebAuthnCredentials");
+    }
+
     public IMongoCollection<BlogPost> GetBlogPostCollection() {
         return _database.GetCollection<BlogPost>("BlogPosts");
     }
     
     public IMongoCollection<GalleryImage> GetGalleryImageCollection() {
         return _database.GetCollection<GalleryImage>("GalleryImages");
+    }
+
+    public IMongoCollection<PushSubscriptionDoc> GetPushSubscriptionCollection() {
+        return _database.GetCollection<PushSubscriptionDoc>("PushSubscriptions");
+    }
+
+    public IMongoCollection<StreamEvent> GetStreamEventCollection() {
+        return _database.GetCollection<StreamEvent>("StreamEvents");
+    }
+
+    public IMongoCollection<ChatBan> GetChatBanCollection() {
+        return _database.GetCollection<ChatBan>("ChatBans");
     }
 }

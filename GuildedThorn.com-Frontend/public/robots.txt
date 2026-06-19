@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /register
+Disallow: /settings
+Disallow: /inbox
+
+Sitemap: https://guildedthorn.com/sitemap.xml

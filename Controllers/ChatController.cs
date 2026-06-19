@@ -1,25 +1,35 @@
+using System.Linq;
 using System.Threading.Tasks;
-using GuildedThorn.com.Models;
 using GuildedThorn.com.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 
 namespace GuildedThorn.com.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]
-public class ChatController(IHubContext<ChatHub> hubContext) : ControllerBase {
-    
-    [HttpPost]
-    [Route("send")]
-    public async Task<IActionResult> SendMessage([FromBody] ChatMessage message) { 
-        if (string.IsNullOrEmpty(message.Content)) {
-            return BadRequest("Message cannot be empty.");
-        }
-    
-        // Send message to SignalR clients
-        await hubContext.Clients.All.SendAsync("ReceiveMessage", "You", message.Content);
-    
-        return Ok();
+public class ChatController(ChatService chat, ChatModerationService mod) : ControllerBase {
+
+    // Initial chat load: recent messages (oldest-first) + current anti-raid state.
+    [AllowAnonymous]
+    [HttpGet("history")]
+    public async Task<IActionResult> History() {
+        var messages = await chat.GetRecentMessagesAsync(100);
+        return Ok(new {
+            antiRaid = mod.AntiRaid,
+            messages = messages.Select(m => new {
+                id = m.Id,
+                user = m.User,
+                content = m.Content,
+                timestamp = m.Timestamp,
+                avatarUrl = m.AvatarUrl,
+                role = m.Role,
+            }),
+        });
     }
+
+    // Owner-only: list currently banned usernames (for an unban UI).
+    [Authorize(Roles = "owner")]
+    [HttpGet("bans")]
+    public IActionResult Bans() => Ok(mod.BannedUsers());
 }

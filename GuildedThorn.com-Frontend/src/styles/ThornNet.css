@@ -1,3 +1,64 @@
+/* ReactFlow theme overrides for the ThornNet graph.
+   Token-based surfaces, Geist Mono labels, themed accent. */
 .react-flow {
-    --xy-node-background-color-default: #ff0000;
+	/* Non-default keys win the var() chain over ReactFlow's light/dark
+	   `*-default` values, so the navy holds in any colorMode. */
+	--xy-background-color: var(--color-navy);
+	--xy-node-background-color: var(--color-navy-surface);
+	--xy-background-color-default: var(--color-navy);
+	--xy-node-background-color-default: var(--color-navy-surface);
+	--xy-node-color-default: var(--color-navy-foreground);
+	--xy-node-border-default: 1px solid var(--color-navy-border);
+	--xy-node-border-radius-default: 10px;
+	--xy-node-boxshadow-default: 0 1px 3px rgb(0 0 0 / 0.35);
+	--xy-edge-stroke-default: var(--color-navy-muted);
+	--xy-edge-stroke-width-default: 1.5;
+	--xy-background-pattern-dots-color-default: var(--color-navy-border);
+
+	/* Controls (zoom / fit / lock) — navy surface + accent on hover. */
+	--xy-controls-button-background-color-default: var(--color-navy-surface);
+	--xy-controls-button-background-color-hover-default: var(--color-navy-border);
+	--xy-controls-button-color-default: var(--color-navy-foreground);
+	--xy-controls-button-color-hover-default: var(--color-primary);
+	--xy-controls-button-border-color-default: var(--color-navy-border);
+}
+
+/* Control panel surface + the small attribution watermark. */
+.react-flow__controls {
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: var(--xy-node-boxshadow-default);
+}
+
+.react-flow__attribution {
+	background: transparent;
+	color: var(--color-muted-foreground);
+}
+
+/* Geist Mono labels give the map a technical, console-like read. */
+.react-flow__node {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: -0.01em;
+	padding: 8px 12px;
+}
+
+/* Infrastructure (routers, switches, APs) carries the accent;
+   endpoint devices stay subtle. */
+.react-flow__node.tn-infra {
+	--xy-node-border-default: 1.5px solid var(--color-primary);
+	color: var(--color-navy-foreground);
+	font-weight: 600;
+}
+
+.react-flow__node.tn-device {
+	--xy-node-border-default: 1px solid var(--color-navy-border);
+	color: var(--color-navy-muted);
+}
+
+/* Highlight a connection on hover / selection. */
+.react-flow__edge:hover .react-flow__edge-path,
+.react-flow__edge.selected .react-flow__edge-path {
+	stroke: var(--color-primary);
 }

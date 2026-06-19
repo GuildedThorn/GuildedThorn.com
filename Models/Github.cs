@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace GuildedThorn.com.Models;
 
@@ -7,7 +7,13 @@ namespace GuildedThorn.com.Models;
 public class GithubInfo
 {
     public bool Hireable { get; set; }
-    public int Public_Repos { get; set; }
+
+    // Pin the wire name so it round-trips as `public_repos` both ways —
+    // GitHub sends `public_repos`, and the SPA reads `public_repos`.
+    // (Default camelCase would otherwise emit `public_Repos`.)
+    [JsonPropertyName("public_repos")]
+    public int PublicRepos { get; set; }
+
     public int Followers { get; set; }
     public int Following { get; set; }
 }

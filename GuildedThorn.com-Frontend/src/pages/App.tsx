@@ -1,441 +1,603 @@
-import "@styles/App.css";
-
-import Table from "@components/ui/Table";
-import { useEffect, useState } from "react";
-import GitHubCalendar from "react-github-calendar";
-import { populateGithubData, populateProjectData } from "@backend/api";
+import { useEffect, useState, lazy, Suspense } from "react";
+import { Link } from "react-router-dom";
+import LazyOnVisible from "@components/LazyOnVisible";
+const GitHubCalendar = lazy(() => import("react-github-calendar"));
+import {
+  populateGithubData,
+  populateProjectData,
+  populateRecentProjectData,
+} from "@backend/api";
 import { Info, Project } from "@backend/types";
 import { Discord } from "@components/Discord";
 import SpotifyTopArtists from "@components/Spotify";
+import SpotifyBanner from "@components/SpotifyBanner";
 import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { cn } from "@lib/utils";
+import Seo from "@components/Seo";
+import { Check, Star, GitFork, ExternalLink } from "lucide-react";
 
-const builds = [
-	{
-		build: "Main",
-		cpu: "Ryzen 9 5900X",
-		ram: "32GB Corsair Vengeance RGB",
-		gpu: "MSI RX 6700XT 2X Mech OC",
-		psu: "EVGA 850w",
-		ssd1: "2TB Samsung 980 EVO",
-		ssd2: "2TB Crucial NVMe",
-		extras: "USB 3.0 PCIE card",
-	},
-	{
-		build: "Streaming",
-		cpu: "Ryzen 7 5700X",
-		ram: "16GB Corsair 3600MHz",
-		gpu: "RTX 2070 Founders Edition",
-		psu: "EVGA 850w",
-		ssd1: "2TB Sabrent Rocket Plus",
-		ssd2: "N/A",
-		extras: "Elgato 4K60 Pro",
-	},
-	{
-		build: "2011 Mac Pro",
-		cpu: "2x Xeon X5690",
-		ram: "128GB DDR3 ECC 1333MHz",
-		gpu: "Radeon HD 7950",
-		psu: "980w",
-		ssd1: "Samsung 850 EVO 250GB",
-		ssd2: "N/A",
-		extras: "USB 3.0 PCIE card",
-	},
+/* Automobiles — add a new car by appending an object to this array. */
+interface CarPart {
+  name: string;
+  done?: boolean;
+}
+
+interface Automobile {
+  name: string;
+  model: string;
+  year: string;
+  paint: string;
+  miles: string;
+  parts: CarPart[];
+}
+
+const cars: Automobile[] = [
+  {
+    name: "2004 Trailblazer EXT",
+    model: "Trailblazer LT EXT",
+    year: "2004",
+    paint: "Black (Red Trim)",
+    miles: "300K+",
+    parts: [
+      { name: "Passenger Side Front Fender", done: true },
+      { name: "4L60E Transmission Rebuild Kit" },
+      { name: "Lower and Upper Control Arms" },
+      { name: "Mechman Alternator" },
+      { name: "XS Power Battery" },
+      { name: "Big 3 Wiring Kit" },
+      { name: "Coil Packs" },
+      { name: "Spark Plugs" },
+      { name: "Fan Clutch" },
+      { name: "Throttle Body" },
+      { name: "Shocks" },
+      { name: "Rotors, Pads, and Struts" },
+      { name: "Timing Belt/Serpentine Belt" },
+    ],
+  },
 ];
 
-const headers = [
-	"Build",
-	"CPU",
-	"RAM",
-	"GPU",
-	"PSU",
-	"SSD 1",
-	"SSD 2",
-	"Extras",
-];
-const data = builds.map((build) => [
-	build.build,
-	build.cpu,
-	build.ram,
-	build.gpu,
-	build.psu,
-	build.ssd1,
-	build.ssd2,
-	build.extras,
-]);
+function CarCard({ car }: { car: Automobile }) {
+  const doneCount = car.parts.filter((p) => p.done).length;
+  const specs: [string, string][] = [
+    ["Model", car.model],
+    ["Year", car.year],
+    ["Paint Color", car.paint],
+    ["Miles", car.miles],
+  ];
 
-const spotifyProfileLink =
-	"https://open.spotify.com/user/lint74q8j4m2mq36z3wyt2obt";
+  return (
+    <div className="rounded-xl border border-border bg-muted px-6 py-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-semibold">{car.name}</h2>
+        <span className="rounded-full bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+          {doneCount}/{car.parts.length} parts done
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-8 text-sm md:flex-row md:text-base">
+        {/* Specs */}
+        <div className="min-w-0 flex-1">
+          <h3 className="mb-2 font-semibold">Description</h3>
+          <dl className="grid grid-cols-[6rem_1fr] gap-x-2 gap-y-1">
+            {specs.map(([label, value]) => (
+              <div key={label} className="contents">
+                <dt className="text-muted-foreground">{label}</dt>
+                <dd className="min-w-0 break-words">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        {/* Part list */}
+        <div className="flex-1">
+          <h3 className="mb-2 font-semibold">Part List</h3>
+          <ul className="space-y-1.5">
+            {car.parts.map((part) => (
+              <li key={part.name} className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+                    part.done
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-transparent",
+                  )}
+                >
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                </span>
+                <span
+                  className={
+                    part.done ? "text-muted-foreground line-through" : ""
+                  }
+                >
+                  {part.name}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const githubBaseUrl = "https://github.com/GuildedThorn";
 
+// Which GitHub feed backs the Projects grid. "pinned" hits the pinned-repos
+// API; "recent" hits the most-recently-pushed-to repos.
+const PROJECT_MODES = [
+  { value: "pinned", label: "Pinned" },
+  { value: "recent", label: "Recently Committed" },
+] as const;
+type ProjectMode = (typeof PROJECT_MODES)[number]["value"];
+
 function App() {
-	const [info, setInfo] = useState<Info>();
-	const [projects, setProjects] = useState<Project[]>([]);
-	const [loading, setLoading] = useState(true);
+  const [info, setInfo] = useState<Info>();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectMode, setProjectMode] = useState<ProjectMode>("pinned");
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState("");
+  const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		const controller = new AbortController();
+  useEffect(() => {
+    const controller = new AbortController();
 
-		async function loadData() {
-			try {
-				const [info, data] = await Promise.all([
-					populateGithubData(controller.signal),
-					populateProjectData(controller.signal),
-				]);
+    async function loadInfo() {
+      try {
+        const info = await populateGithubData(controller.signal);
+        if (info) setInfo(info);
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") {
+          console.log("Fetch aborted");
+        } else {
+          console.error("Fetch error:", error);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
 
-				if (info) setInfo(info);
-				if (data) setProjects(data);
-			} catch (error: unknown) {
-				if (error instanceof Error && error.name === "AbortError") {
-					console.log("Fetch aborted");
-				} else {
-					console.error("Fetch error:", error);
-				}
-			} finally {
-				setLoading(false);
-			}
-		}
+    loadInfo().then(null);
 
-		loadData().then(null);
+    return () => controller.abort();
+  }, []);
 
-		return () => controller.abort();
-	}, []);
+  useEffect(() => {
+    const controller = new AbortController();
 
+    async function loadProjects() {
+      setProjectsLoading(true);
+      setProjectsError("");
+      try {
+        const data =
+          projectMode === "recent"
+            ? await populateRecentProjectData(controller.signal)
+            : await populateProjectData(controller.signal);
+        // Replace, not merge — a failed load must never leave the other
+        // mode's repos on screen pretending to be this one's.
+        setProjects(data ?? []);
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") {
+          console.log("Fetch aborted");
+        } else {
+          console.error("Fetch error:", error);
+          setProjects([]);
+          setProjectsError("Couldn’t load these repos right now.");
+        }
+      } finally {
+        setProjectsLoading(false);
+      }
+    }
 
+    loadProjects().then(null);
 
-	if (loading)
-		return (
-			<div className="p-4 text-center text-gray-500">Loading projects...</div>
-		);
+    return () => controller.abort();
+  }, [projectMode]);
 
-	return (
-		<>
-			<div className="py-8 text-center">
-				<h1 className="text-3xl font-bold mb-4">Welcome to my portfolio</h1>
-			</div>
+  function getMyAge(): number {
+    const birthDate = new Date(2003, 2, 17); // Note: Month is 0-indexed (2 = March)
+    const today = new Date();
 
-			<div className="section">
-				<Card title={"Jamie Duddleston"}>
-					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Jamie Duddleston</h1>
-					<img
-						className="w-full max-w-md rounded-2xl shadow-lg mx-auto m-2"
-						src="/images/Portfolio-Image.jpg"
-						alt="Portfolio"
-					/>
-					<div className={"flex flex-col gap-3"}>
-						<p>
-							I am 22 years old, I have many hobbies, some which include
-							software development, cyber security, audio equipment, game
-							development, chess, building bikes, and much more.
-						</p>
-						<p>
-							I was born and raised in Chicago, Illinois, I was a curious kid.
-							Always taking stuff apart to see how it worked (sometimes breaking
-							and sometimes being able to put it back together again :D) I make
-							mistakes like any other person, but I do learn from them, adapt
-							and try to prevent them again. I love sports, enjoy my morning
-							walks, and love to run. When I'm outside with headphones on there
-							is nothing holding me back, the breeze on my face, the warming
-							sensation of the sun, the birds chirping, I live for it all.
-						</p>
-						<p>
-							I love automobiles and aircraft, going to car shows as a kid,
-							being surrounded around mechanics and truck drivers, growing up
-							with two of my best friends who are now in the air force. I am
-							looking for a place where I can thrive, work my butt off and put
-							the pedal to the metal. If you are interested in hiring me, dont
-							hesitate to contact me at any of the given locations in my contact
-							section.
-						</p>
-					</div>
-					<a href={"/files/Resume.pdf"} target={"_blank"}>Here's my resume</a>
-				</Card>
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const dayDiff = today.getDate() - birthDate.getDate();
 
-				<Card title={"Digital Life"}>
-					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Digital Life</h1>
-					<div className="items-center justify-center p-2">
-						<img
-							className="w-full max-w-md rounded-2xl shadow-lg mx-auto"
-							src="/images/FullLogo.jpg"
-							alt="Logo"
-						/>
-					</div>
+    // If today's date is before March 17th in the current year, subtract 1
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age--;
+    }
 
-					<div className={"flex flex-col gap-3"}>
-						<p>
-							Many people know me by my online persona: Thorn, I have had many
-							handles in my life, but I think this one is to stay.
-						</p>
-						<p>
-							I was a huge factions player on Minecraft at the time, so to me
-							this username is a collective of things; Gilded (dressed in gold
-							or perfect), Guild (a group of people in a team), and Thorn which
-							in greek is `skolops (a pointed stake, or sharp object).
-						</p>
-						<p>
-							Looking back I guess that's what I was considered in game, the
-							final dagger to many of the factions I played against. Not too
-							long after deciding on the handle I found this on
-							<a href={"https://gamejolt.com/games/guilded-thorn/158759"}>
-								{" "}
-								Gamejolt
-							</a>
-							, and knew it was meant to be. I wear the name with pride as many
-							have accepted it for me.
-						</p>
-					</div>
-					<Discord />
-				</Card>
-			</div>
+    return age;
+  }
 
-			<div className="section">
-				{/* Setup */}
-				<Card title={"Setup"}>
-					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Setup</h1>
-					<p>
-						I spend a LOT of time working on hardware... printers, camera, tvs
-						and much more.
-					</p>
-					<div className="overflow-x-auto mt-4">
-						<Table headers={headers} data={data} />
-					</div>
+  if (loading)
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        Loading projects...
+      </div>
+    );
 
-					<div className="border dark:border-gray-600 rounded-lg p-4 mt-4 bg-gray-100 dark:bg-gray-700">
-						2011 Macbook Pro 2tb SSD 16gb Ram (MacOS Sonoma Open Core Patched +
-						Kali Linux)
-						<br />
-						2021 Ipad Pro 11 inch
-						<br />
-						Iphone 11
-						<br />
-						Nexus 6p
-						<br />
-						Tic Watch Pro 3 GPS
-						<br />
-						Flipper Zero
-						<br />
-						2x HackRf (1 with Portapack h2)
-						<br />
-						Rtl-SDR + Bias Tee 5v FM LNA
-						<br />
-						Wii U (Heavily Modded (Aroma + Tiramisu)(32gb sd, 256gb flash))
-						<br />
-						Ps4 Heavily Modded (Firmware 9.0 + ESP32 S2 Mini)
-						<br />
-						Xbox One Original
-						<br />
-						Xbox One S
-						<br />
-						Steam Deck 1tb
-						<br />
-						2x Quest 2
-						<br />
-						2x Oculus CV1
-						<br />
-						Apple TV 4k 3rd Generation
-					</div>
-				</Card>
+  return (
+    <div className="page">
+      <Seo
+        title="Jamie Duddleston"
+        description="Jamie Duddleston (GuildedThorn) — software developer and cybersecurity enthusiast from Chicago. Full-stack projects, blog, gallery, and live radio."
+        path="/"
+      />
+      <header className="pb-10 text-center sm:pb-14">
+        <p className="eyebrow mb-4">Jamie Duddleston · Chicago</p>
+        <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">
+          <span className="bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+            GuildedThorn
+          </span>
+        </h1>
+        <p className="mx-auto mt-5 max-w-2xl text-balance text-lg text-muted-foreground">
+          Software developer and cybersecurity enthusiast who loves building
+          things, taking them apart to learn how they work, and putting the
+          pedal to the metal.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link to="/resume">
+            <Button>View résumé</Button>
+          </Link>
+          <Link to="/contact">
+            <Button variant="outline">Get in touch</Button>
+          </Link>
+        </div>
+      </header>
 
-				<Card title={"Automobiles"}>
-					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Automobiles</h1>
-					<div className={"flex flex-col gap-3"}>
-						<p>
-							I love cars, many of my family and friends having project cars,
-							going to shows as a kid (World of wheels, Cars and Coffee, Seneca
-							car shows), and a lot more to name.
-						</p>
-						<p>
-							I've wanted to get one for a very long time, it finally happened
-							in 2025, my friend told me about a 2004 Trailblazer EXT on
-							facebook marketplace being listed for 1k usd at 300k miles.
-							Messaged the guy, went there check it out, came back about a week
-							later with cash in hand and bought it, you know who you are. but
-							thank you for letting me swap the solenoids in your driveway.
-						</p>
-						<p>
-							We had to go 40mph down the side roads because it wouldn't go into
-							3rd gear, which as of the date of writing this, I still have not
-							dropped the trans and rebuilt it, but we got it home.
-						</p>
-					</div>
+      <div className="section">
+        <Card className="lg:col-span-2">
+          <h2 className="text-3xl mb-3">About Me</h2>
+          <img
+            className="w-full max-w-md rounded-2xl shadow-lg mx-auto m-2"
+            src="/images/portrait.jpg"
+            alt="Portrait of Jamie Duddleston"
+            width={1620}
+            height={1080}
+            loading="lazy"
+            decoding="async"
+          />
+          <div className={"flex flex-col gap-3"}>
+            <p>
+              I am{" "}
+              <span className="group relative cursor-pointer font-bold border-b border-dashed border-gray-400">
+                {getMyAge()}
+                {/* Tooltip Wrapper */}
+                <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 scale-90 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-all group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap">
+                  March 17, 2003
+                </span>
+              </span>{" "}
+              years old, I have many hobbies, some which include software
+              development, cyber security, audio equipment, game development,
+              chess, building bikes, and much more.
+            </p>
+            <p>
+              I was born and raised in Chicago, Illinois, I was a curious kid.
+              Always taking stuff apart to see how it worked (sometimes breaking
+              and sometimes being able to put it back together again :D) I make
+              mistakes like any other person, but I do learn from them, adapt
+              and try to prevent them again. I love sports, enjoy my morning
+              walks, and love to run. When I'm outside with headphones on there
+              is nothing holding me back, the breeze on my face, the warming
+              sensation of the sun, the birds chirping, I live for it all.
+            </p>
+            <p>
+              I love automobiles and aircraft, going to car shows as a kid,
+              being surrounded around mechanics and truck drivers, growing up
+              with two of my best friends who are now in the air force. I am
+              looking for a place where I can thrive, work my butt off and put
+              the pedal to the metal. If you are interested in hiring me, dont
+              hesitate to contact me at any of the given locations in my contact
+              section.
+            </p>
+          </div>
 
-					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-6 px-6 mt-4 mb-4">
-						<h1 className="text-xl font-semibold mb-4">
-							2004 Trail blazer EXT
-						</h1>
+          <hr className="my-8 border-border" />
 
-						<div className="flex flex-col md:flex-row gap-8 text-sm md:text-base">
-							{/* Audio Info */}
-							<div className="flex-1 space-y-2">
-								<h2 className="font-semibold mb-2">Description</h2>
-								<p>
-									<strong>Model:</strong> Trailblazer EXT
-								</p>
-								<p>
-									<strong>Year:</strong> 2004
-								</p>
-								<p>
-									<strong>Paint Color:</strong> UNKNOWN
-								</p>
-								<p>
-									<strong>Miles:</strong> 300K+
-								</p>
-							</div>
+          <p className="eyebrow mb-3">Behind the name</p>
+          <div className="items-center justify-center p-2">
+            <img
+              className="w-full max-w-md mx-auto"
+              src="/images/Print_Transparent.svg"
+              alt="GuildedThorn logo"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
 
-							{/* Part List */}
-							<div className="flex-1">
-								<h2 className="font-semibold mb-2">Part List</h2>
-								<ul className="list-disc list-inside space-y-1">
-									<li>Passenger Side Front Fender (DONE)</li>
-									<li>4L60E Transmission Rebuild Kit</li>
-									<li>Lower and Upper Control Arms</li>
-									<li>Mechman Alternator</li>
-									<li>XS Power Battery</li>
-									<li>Big 3 Wiring Kit</li>
-									<li>Coil Packs</li>
-									<li>Spark Plugs</li>
-									<li>Fan Clutch</li>
-									<li>Throttle Body</li>
-									<li>Shocks</li>
-									<li>Rotors, Pads, and Struts</li>
-									<li>Timing Belt/Serpentine Belt</li>
-								</ul>
-							</div>
-						</div>
-					</div>
-				</Card>
-			</div>
+          <div className={"flex flex-col gap-3"}>
+            <p>
+              Many people know me by my online persona: Thorn, I have had many
+              handles in my life, but I think this one is to stay.
+            </p>
+            <p>
+              I was a huge factions player on Minecraft at the time, so to me
+              this username is a collective of things; Gilded (dressed in gold
+              or perfect), Guild (a group of people in a team), and Thorn which
+              in greek is `skolops (a pointed stake, or sharp object).
+            </p>
+            <p>
+              Looking back I guess that's what I was considered in game, the
+              final dagger to many of the factions I played against. Not too
+              long after deciding on the handle I found this on
+              <a
+                className="text-primary hover:underline"
+                href={"https://gamejolt.com/games/guilded-thorn/158759"}
+              >
+                {" "}
+                Gamejolt
+              </a>
+              , and knew it was meant to be. I wear the name with pride as many
+              have accepted it for me.
+            </p>
+          </div>
+          <Discord />
+        </Card>
+      </div>
 
-			<div className="section">
-				<Card title={"Audiophile"}>
-					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Audiophiles</h1>
-					<p>
-						I love music, audio systems, lighting, lasers, and pyrotechnics...
-					</p>
-					<p className="text-sm md:text-base text-center mt-4">
-						Current build includes speakers from Pioneer, Sony, Legrand, and
-						more...
-					</p>
+      <div className="section">
+        {/* Setup */}
+        <Card title={"Setup"}>
+          <h1 className="text-3xl mb-3">Setup</h1>
+          <p>
+            A lot of people ask me how I have obtained so much hardware over the
+            years, as well as why (lol), I spent a very long time going through
+            alleys, overstock centers, recyling places, Salvation Armys etc,
+            looking for deals, accepting anything that I can and trading up as I
+            went, as for why, why do people spend money on hobbies to begin
+            with? It's something I enjoy doing, and it allows me to write more
+            software in the process so who cares.
+          </p>
+          <div className="tile mt-4 p-4">
+            <p className="eyebrow mb-3">Devices</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                {
+                  name: "2011 MacBook Pro",
+                  detail:
+                    "2TB SSD · 16GB RAM · macOS Sonoma (OpenCore) + Kali Linux",
+                },
+                { name: '2021 iPad Pro 11"' },
+                { name: "iPhone 11" },
+                { name: "Nexus 6P" },
+                { name: "TicWatch Pro 3 GPS" },
+                { name: "Flipper Zero" },
+                { name: "2× HackRF", detail: "one with PortaPack H2" },
+                { name: "RTL-SDR", detail: "Bias Tee 5V FM LNA" },
+                {
+                  name: "Wii U",
+                  detail: "Modded — Aroma + Tiramisu · 32GB SD, 256GB flash",
+                },
+                { name: "PS4", detail: "Modded — FW 9.0 + ESP32-S2 Mini" },
+                { name: "Xbox One (Original)" },
+                { name: "Xbox One S" },
+                { name: "Steam Deck 1TB" },
+                { name: "2× Quest 2" },
+                { name: "2× Oculus CV1" },
+                { name: "Apple TV 4K (3rd Gen)" },
+              ].map((device) => (
+                <div
+                  key={device.name}
+                  className="rounded-lg bg-background/60 p-3"
+                >
+                  <p className="font-medium">{device.name}</p>
+                  {device.detail && (
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {device.detail}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
 
-					<a
-						href={spotifyProfileLink}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="inline-flex items-center mt-4 space-x-2"
-					><img
-						src="https://spotify-drmg65jrz.vercel.app/api/spotify"
-						alt="Spotify Profile"
-						className="h-20 w-auto rounded-lg shadow-md"
-					/></a>
+        <Card title={"Automobiles"}>
+          <h1 className="text-3xl mb-3">Automobiles</h1>
+          <div className={"flex flex-col gap-3"}>
+            <p>
+              I love cars, many of my family and friends having project cars,
+              going to shows as a kid (World of wheels, Cars and Coffee, Seneca
+              car shows), and a lot more to name.
+            </p>
+            <p>
+              I've wanted to get one for a very long time, it finally happened
+              in 2025, my friend told me about a 2004 Trailblazer EXT on
+              facebook marketplace being listed for 1k usd at 300k miles.
+              Messaged the guy, went there check it out, came back about a week
+              later with cash in hand and bought it, you know who you are. but
+              thank you for letting me swap the solenoids in your driveway.
+            </p>
+            <p>
+              We had to go 40mph down the side roads because it wouldn't go into
+              3rd gear, which as of the date of writing this, I still have not
+              dropped the trans and rebuilt it, but we got it home.
+            </p>
+          </div>
 
-					<div
-						className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-6 px-6 mt-4 mb-4">
-						<h1>Room Setup</h1>
-						<div className="mt-4 space-y-2 text-sm md:text-base">
-							<p>
-								<strong>Receiver:</strong> Pioneer RX-V765
-							</p>
-							<p>
-								<strong>Center Speaker:</strong> JBL N-Center, Klipsch KSF-C5
-							</p>
-							<p>
-								<strong>Left/Right Front:</strong> 2x Sony 3-way speakers
-							</p>
-							<p>
-								<strong>Surround:</strong> Legrand + Sharp 3-way speakers
-							</p>
-							<p>
-								<strong>Presence:</strong> 2x Pioneer Graybar TV Speakers
-							</p>
-							<p>
-								<strong>Rear:</strong> 2x Pioneer 3-way speakers
-							</p>
-							<p>
-								<strong>Amps:</strong> 2500W Power Acoustik, 1000W Pioneer, 1000W
-								Skar Audio RP1504AB
-							</p>
-							<p>
-								<strong>Right Subwoofer:</strong> 2x Kicker CompVR
-							</p>
-							<p>
-								<strong>Left Subwoofer:</strong> 2x Kicker CompC
-							</p>
-						</div>
-					</div>
+          <div className="my-4 space-y-4">
+            {cars.map((car) => (
+              <CarCard key={car.name} car={car} />
+            ))}
+          </div>
+        </Card>
+      </div>
 
-					<SpotifyTopArtists/>
-				</Card>
+      <div className="section">
+        <Card title={"Audiophile"}>
+          <h1 className="text-3xl mb-3">Audiophiles</h1>
+          <p className="text-sm md:text-base text-center mt-4">
+            I love music, listen to numerous genres getting suggestions from a
+            lot of different people and cultures, and sometimes introducing
+            people to new genres also :D, I want to get back into producing
+            again, but my limited time has prevented me from doing so
+          </p>
 
-				<Card title={"Software Development"}>
-					<h1 className="font-[Caveat,_cursive] text-2xl mb-2">Software Development</h1>
-					<p className={"flex flex-col py-4"}>
-						I write a lot of software, frontend, backend, you name it. I have
-						many preferred languages, but you'll mostly see me writing in c#,
-						java, typescript. I used to be a SQL main but now I mostly use
-						MongoDB now. My IDE of choice is any Jetbrains Product, but for
-						small things I will use nvim or nano.
-					</p>
+          <SpotifyBanner />
 
-					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
-						{info && (
-							<div>
-								<p className={"p-2"}>
-									Looking for Job: {info.hireable ? "Yes" : "No"}
-								</p>
-								<p className={"p-2"}>Public Repos: {info.public_repos}</p>
-								<p className={"p-2"}>Followers: {info.followers}</p>
-								<p className={"p-2"}>Following: {info.following}</p>
-							</div>
-						)}
-					</div>
+          <div className="tile my-4 p-4 text-left">
+            <h2 className="mb-4 text-xl font-semibold">Room Setup</h2>
+            <dl className="grid gap-3 sm:grid-cols-2">
+              {[
+                { label: "Receiver", value: "Pioneer RX-V765" },
+                {
+                  label: "Center Speaker",
+                  value: "JBL N-Center, Klipsch KSF-C5",
+                },
+                { label: "Left/Right Front", value: "2x Sony 3-way speakers" },
+                { label: "Surround", value: "Legrand + Sharp 3-way speakers" },
+                { label: "Presence", value: "2x Pioneer Graybar TV Speakers" },
+                { label: "Rear", value: "2x Pioneer 3-way speakers" },
+                {
+                  label: "Amps",
+                  value:
+                    "2500W Power Acoustik, 1000W Pioneer, 1000W Skar Audio RP1504AB",
+                },
+                { label: "Right Subwoofer", value: "2x Kicker CompVR" },
+                { label: "Left Subwoofer", value: "2x Kicker CompC" },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-lg bg-background/60 p-3">
+                  <dt className="eyebrow">{label}</dt>
+                  <dd className="mt-0.5 text-sm font-medium">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
 
-					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700 py-4 mt-4 mb-4">
-						{projects.map((project) => (
-							<div key={project.name}>
-								<h2 className="text-lg font-bold">{project.name}</h2>
-								<p className="p-2">
-									{project.description || "No description provided."}
-								</p>
-								<div className="items-center gap-2 text-sm mt-2">
-									<span
-										className="text-gray-700 dark:text-gray-300 font-medium"
-										style={{ color: project.languageColor }}
-									>
-										{project.language}
-									</span>
+          <SpotifyTopArtists />
+        </Card>
 
-									<span className="text-gray-600 dark:text-gray-400">
-										⭐ {project.stars}
-									</span>
-									<span className="text-gray-600 dark:text-gray-400">
-										🍴 {project.forks}
-									</span>
+        <Card title={"Software Development"}>
+          <h1 className="text-3xl mb-3">Software Development</h1>
+          <p className={"flex flex-col py-4"}>
+            I write a lot of software, frontend, backend, you name it. My
+            workflow is constantly changing and improving but currently my main
+            languages I write in are c#, typescript, c, c++, I use a pretty
+            opinionated and heavy neovim setup.
+          </p>
 
-									<br />
-									<a
-										href={`${githubBaseUrl}/${project.name}`}
-										target="_blank"
-										className="text-red-500 dark:text-red-400"
-										rel="noopener noreferrer"
-									>
-										Git Link
-									</a>
-								</div>
-								<hr className="my-12 h-0.5 border-t-0 bg-neutral-300 dark:bg-white/20" />
-							</div>
-						))}
-					</div>
-					<div className="border dark:border-gray-400 rounded-lg bg-gray-100 dark:bg-gray-700">
-						<h2 className="text-xl font-semibold text-center mb-4">
-							GitHub Activity
-						</h2>
-						<div className="overflow-x-auto p-4">
-							<GitHubCalendar username="GuildedThorn"/>
-						</div>
-					</div>
-				</Card>
-			</div>
-		</>
-	);
+          {/* GitHub stats */}
+          {info && (
+            <div className="my-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: "Hireable", value: info.hireable ? "Yes" : "No" },
+                { label: "Public Repos", value: info.public_repos },
+                { label: "Followers", value: info.followers },
+                { label: "Following", value: info.following },
+              ].map((stat) => (
+                <div key={stat.label} className="tile p-3 text-center">
+                  <p className="font-mono text-2xl font-bold tabular-nums">
+                    {stat.value}
+                  </p>
+                  <p className="eyebrow mt-0.5">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Projects */}
+          <div className="mt-6 mb-3 flex flex-wrap items-center gap-2">
+            <h2 className="text-left text-xl font-semibold">Projects</h2>
+
+            <div className="ml-auto inline-flex rounded-lg border border-border bg-muted/50 p-0.5">
+              {PROJECT_MODES.map((m) => (
+                <button
+                  key={m.value}
+                  onClick={() => setProjectMode(m.value)}
+                  className={cn(
+                    "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                    projectMode === m.value
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {projectsError && !projectsLoading ? (
+            <p className="text-sm text-muted-foreground">{projectsError}</p>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {projectsLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="tile flex flex-col gap-3 p-4">
+                    <div className="h-4 w-32 animate-pulse rounded bg-muted-foreground/20" />
+                    <div className="h-3 w-full animate-pulse rounded bg-muted-foreground/20" />
+                    <div className="h-3 w-24 animate-pulse rounded bg-muted-foreground/20" />
+                  </div>
+                ))
+              : projects.map((project) => (
+                  <a
+                    key={project.name}
+                    href={`${githubBaseUrl}/${project.name}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group tile flex min-w-0 flex-col gap-3 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="min-w-0 break-words font-semibold group-hover:text-primary">
+                        {project.name}
+                      </h3>
+                      <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                    </div>
+
+                    <p className="line-clamp-2 text-sm text-muted-foreground">
+                      {project.description || "No description provided."}
+                    </p>
+
+                    <div className="mt-auto flex flex-wrap items-center gap-4 font-mono text-sm text-muted-foreground">
+                      {project.language && (
+                        <span className="flex items-center gap-1.5">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: project.languageColor }}
+                          />
+                          {project.language}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1 tabular-nums">
+                        <Star className="h-3.5 w-3.5" /> {project.stars}
+                      </span>
+                      <span className="flex items-center gap-1 tabular-nums">
+                        <GitFork className="h-3.5 w-3.5" /> {project.forks}
+                      </span>
+                    </div>
+                  </a>
+                ))}
+          </div>
+
+          {/* GitHub activity */}
+          <div className="tile mt-6 p-4">
+            <h2 className="mb-4 text-center text-xl font-semibold">
+              GitHub Activity
+            </h2>
+            <div className="overflow-x-auto">
+              <LazyOnVisible
+                fallback={
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    Loading activity…
+                  </div>
+                }
+              >
+                <Suspense
+                  fallback={
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      Loading activity…
+                    </div>
+                  }
+                >
+                  <GitHubCalendar username="GuildedThorn" />
+                </Suspense>
+              </LazyOnVisible>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
 export default App;

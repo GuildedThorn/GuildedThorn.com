@@ -1,139 +1,133 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
-import { FaImages, FaQuestion, FaScroll, FaStream } from "react-icons/fa";
+import { Link, NavLink } from "react-router-dom";
+import { Menu, X, LogOut, LogIn, UserPlus } from "lucide-react";
+import { FaBook, FaCode, FaEnvelope, FaImages, FaScroll, FaStream, FaTools } from "react-icons/fa";
 import { PiNetwork } from "react-icons/pi";
 import { FaRadio } from "react-icons/fa6";
+import { cn } from "@lib/utils";
+import { useAuth } from "@components/AuthContext";
+import { Avatar } from "@components/ui/Avatar";
+import { ThemeToggle } from "@components/ui/ThemeToggle";
+import { logout } from "@backend/api";
 
 export default function NavBar() {
 	const [menuOpen, setMenuOpen] = useState(false);
-	const [mobileDropdowns, setMobileDropdowns] = useState<Record<string, boolean>>({});
-
-
-	const toggleDropdown = (label: string) => {
-		setMobileDropdowns((prev) => ({ ...prev, [label]: !prev[label] }));
-	};
-
+	const { isAuthenticated, user, loading, refresh } = useAuth();
 
 	const navItems = [
-		{ to: "/stream", label: "Stream", icon: <FaStream className="inline-block mr-1 text-lg" /> },
-		{ to: "/net", label: "Network", icon: <PiNetwork className="inline-block mr-1 text-lg" /> },
-		{ to: "/gallery/images/", label: "Gallery", icon: <FaImages className="inline-block mr-1 text-lg" /> },
-		{ to: "/blog/pages", label: "Blog", icon: <FaScroll className="inline-block mr-1 text-lg" /> },
-		{ to: "/radio", label: "Radio", icon: <FaRadio className="inline-block mr-1 text-lg" /> },
-		{ to: "/guestbook", label: "Guestbook", icon: <FaQuestion className="inline-block mr-1 text-lg" /> },
-		{
-			label: "Tools",
-			icon: <FaQuestion className="inline-block mr-1 text-lg" />,
-			children: [
-				{ to: "/tools/pomodoro", label: "Pomodoro Timer" },
-				{ to: "/tools/regex", label: "Regex Tester" },
-				{ to: "/tools/loremipsum", label: "Lorem Ipsum Generator" },
-				{ to: "/tools/colorconverter", label: "Color Converter" },
-				{ to: "/tools/uuidgenerator", label: "UUID Generator" },
-			],
-		},
-		{ to: "/contact", label: "Contact", icon: <FaQuestion className="inline-block mr-1 text-lg" /> },
+		{ to: "/projects", label: "Projects", icon: <FaCode className="text-base" /> },
+		{ to: "/stream", label: "Stream", icon: <FaStream className="text-base" /> },
+		{ to: "/net", label: "Network", icon: <PiNetwork className="text-base" /> },
+		{ to: "/gallery/images/", label: "Gallery", icon: <FaImages className="text-base" /> },
+		{ to: "/blog/pages", label: "Blog", icon: <FaScroll className="text-base" /> },
+		{ to: "/radio", label: "Radio", icon: <FaRadio className="text-base" /> },
+		{ to: "/guestbook", label: "Guestbook", icon: <FaBook className="text-base" /> },
+		{ to: "/tools", label: "Tools", icon: <FaTools className="text-base" /> },
+		{ to: "/contact", label: "Contact", icon: <FaEnvelope className="text-base" /> },
 	];
 
-	return (
-		<nav className="bg-white shadow-md dark:bg-gray-900 dark:shadow-gray-800">
-			<div className="mx-auto px-6 flex justify-between items-center h-16">
-				{/* Left: Logo & brand */}
-				<Link to="/" className="flex-shrink-0 flex items-center space-x-2">
-					<img src="/images/Logo.svg" alt="MineCloud Logo" className="h-12 w-12" />
-					<span className="text-2xl font-extrabold text-blue-600 dark:text-blue-400 tracking-tight max-[290px]:hidden">
-						GuildedThorn
-					</span>
-				</Link>
+	const closeMenu = () => setMenuOpen(false);
 
-				{/* Right: Links & hamburger */}
-				<div className="flex items-center">
-					{/* Desktop links */}
-					<div className="hidden lg:flex items-center space-x-4 xl:space-x-6">
-						{navItems.map((item) =>
-							item.children ? (
-								<div key={item.label} className="relative group">
-									<button className="nav-link inline-flex items-center">
-										{item.icon}
-										{item.label}
-									</button>
-									{/* Dropdown */}
-									<div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-500 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transform -translate-y-2 transition-all">
-										{item.children.map((child) => (
-											<Link
-												key={child.to}
-												to={child.to}
-												className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-											>
-												{child.label}
-											</Link>
-										))}
-									</div>
-								</div>
-							) : (
-								<Link key={item.to} to={item.to} className="nav-link inline-flex items-center">
-									{item.icon}
-									{item.label}
-								</Link>
-							)
-						)}
+	const handleLogout = async () => {
+		await logout();
+		await refresh();
+		closeMenu();
+	};
+
+	const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+		cn("nav-link", isActive && "bg-muted text-primary");
+
+	const authLinks = loading ? null : isAuthenticated ? (
+		<>
+			<Link to="/settings" className="nav-link min-w-0 max-w-[12rem]" onClick={closeMenu}>
+				<Avatar src={user?.avatarUrl} name={user?.name} className="h-6 w-6 shrink-0 text-[10px]" />
+				<span className="truncate">{user?.name || "Account"}</span>
+			</Link>
+			<button onClick={handleLogout} className="nav-link">
+				<LogOut className="h-4 w-4 text-destructive" />
+				Logout
+			</button>
+		</>
+	) : (
+		<>
+			<Link to="/login" className="nav-link" onClick={closeMenu}>
+				<LogIn className="h-4 w-4" />
+				Login
+			</Link>
+			<Link
+				to="/register"
+				onClick={closeMenu}
+				className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm
+					font-medium text-primary-foreground transition-colors hover:bg-primary/90
+					focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+			>
+				<UserPlus className="h-4 w-4" />
+				Register
+			</Link>
+		</>
+	);
+
+	return (
+		<div className="sticky top-0 z-40 px-3 pt-3">
+			<nav className="mx-auto max-w-7xl rounded-2xl border border-border bg-card/80 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/70">
+				<div className="flex h-16 items-center justify-between gap-2 px-4 sm:px-6">
+					{/* Brand */}
+					<Link to="/" className="flex shrink-0 items-center gap-2" onClick={closeMenu}>
+						<img src="/images/Logo.svg" alt="GuildedThorn logo" className="h-10 w-10" />
+						<span className="text-xl font-extrabold tracking-tight text-primary max-[360px]:hidden">
+							GuildedThorn
+						</span>
+					</Link>
+
+					{/* Desktop: nav links + auth (only when there's room for the full row) */}
+					<div className="hidden items-center gap-1 xl:flex">
+						{navItems.map((item) => (
+							<NavLink key={item.to} to={item.to} className={navLinkClass}>
+								{item.icon}
+								{item.label}
+							</NavLink>
+						))}
+						<span className="mx-1 h-6 w-px bg-border" />
+						{authLinks}
+						<ThemeToggle />
 					</div>
 
-					{/* Hamburger button */}
+					{/* Mobile: hamburger */}
 					<button
 						onClick={() => setMenuOpen(!menuOpen)}
-						className="lg:hidden ml-2 text-gray-700 dark:text-gray-300 focus:outline-none"
+						className="rounded-lg p-2 text-foreground/80 transition-colors hover:bg-muted
+							focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:hidden"
 						aria-label="Toggle navigation menu"
+						aria-expanded={menuOpen}
 					>
-						{menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+						{menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
 					</button>
 				</div>
-			</div>
 
-			{/* Mobile menu */}
-			{menuOpen && (
-				<div className="lg:hidden px-6 pb-4">
-					<div className="flex flex-col space-y-2">
-						{navItems.map((item) =>
-							item.children ? (
-								<div key={item.label} className="flex flex-col">
-									<button
-										onClick={() => toggleDropdown(item.label)}
-										className="nav-link flex justify-between items-center"
-									>
-										<span>{item.label}</span>
-										<span>{mobileDropdowns[item.label] ? "−" : "+"}</span>
-									</button>
-									{mobileDropdowns[item.label] && (
-										<div className="ml-4 flex flex-col space-y-1">
-											{item.children.map((child) => (
-												<Link
-													key={child.to}
-													to={child.to}
-													className="nav-link"
-													onClick={() => setMenuOpen(false)}
-												>
-													{child.label}
-												</Link>
-											))}
-										</div>
-									)}
-								</div>
-							) : (
-								<Link
+				{/* Mobile menu */}
+				{menuOpen && (
+					<div className="border-t border-border px-3 pb-3 pt-2 xl:hidden">
+						<div className="flex flex-col gap-1">
+							{navItems.map((item) => (
+								<NavLink
 									key={item.to}
 									to={item.to}
-									className="nav-link"
-									onClick={() => setMenuOpen(false)}
+									className={({ isActive }) =>
+										cn("nav-link w-full", isActive && "bg-muted text-primary")
+									}
+									onClick={closeMenu}
 								>
+									{item.icon}
 									{item.label}
-								</Link>
-							)
-						)}
+								</NavLink>
+							))}
+							<span className="my-2 h-px bg-border" />
+							{authLinks}
+							<ThemeToggle className="w-full" />
+						</div>
 					</div>
-				</div>
-			)}
-		</nav>
+				)}
+			</nav>
+		</div>
 	);
 }

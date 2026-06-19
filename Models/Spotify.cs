@@ -22,6 +22,10 @@ public class SpotifyTopArtistsResponse {
 public class SpotifySettings {
     public required string ClientId { get; set; }
     public required string ClientSecret { get; set; }
-    public required string RefreshToken { get; set; }
     public required string RedirectUri { get; set; }
+
+    // Long-lived refresh token. Optional: capture it once from /api/spotify/callback
+    // and set Spotify:RefreshToken (env: Spotify__RefreshToken) to stay authorized
+    // permanently with no interactive login.
+    public string? RefreshToken { get; set; }
 }

@@ -59,24 +59,35 @@ public class SpotifyController(IOptions<SpotifySettings> settings, IHttpClientFa
         if (tokenResponse == null)
             return BadRequest("Invalid token response.");
 
-        // Save tokens in-memory (replace with DB in production)
+        // Cache tokens in-memory for this run...
         _accessToken = tokenResponse.AccessToken;
         _refreshToken = tokenResponse.RefreshToken;
         _accessTokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn - 60);
 
-        return Content("Spotify authorization successful! You can now call /api/spotify/top-artists.");
+        // ...and print the long-lived refresh token. Paste it into your
+        // .env / config as Spotify:RefreshToken to never log in again.
+        return Content(
+            "Spotify authorization successful!\n\n" +
+            "To stay authorized permanently (across restarts/deploys), set this as\n" +
+            "Spotify:RefreshToken in your .env or Resources/config.json:\n\n" +
+            tokenResponse.RefreshToken + "\n");
     }
 
     [HttpGet("top-artists")]
     public async Task<IActionResult> GetTopArtists() {
-        if (string.IsNullOrEmpty(_refreshToken))
-            return BadRequest("User not authorized. Please login first at /api/spotify/login");
+        // Prefer the freshest in-memory token, but fall back to the long-lived
+        // refresh token from config. That way a one-time authorization (whose
+        // refresh token you paste into Spotify:RefreshToken) keeps working
+        // across restarts — no interactive login needed ever again.
+        var refreshToken = string.IsNullOrEmpty(_refreshToken) ? _settings.RefreshToken : _refreshToken;
+        if (string.IsNullOrEmpty(refreshToken))
+            return BadRequest("Spotify not authorized. Visit /api/spotify/login once, then set the printed token as Spotify:RefreshToken.");
 
         await TokenSemaphore.WaitAsync();
         try {
             // Refresh access token if expired or missing
             if (_accessToken == null || DateTime.UtcNow >= _accessTokenExpiresAt) {
-                var newAccessToken = await RefreshAccessToken(_refreshToken);
+                var newAccessToken = await RefreshAccessToken(refreshToken);
                 if (newAccessToken == null)
                     return StatusCode(500, "Failed to refresh access token.");
 
@@ -147,7 +158,12 @@ public class SpotifyController(IOptions<SpotifySettings> settings, IHttpClientFa
                 genres = item.GetProperty("genres").EnumerateArray().Select(x => x.GetString()).ToList(),
                 imageUrl = item.TryGetProperty("images", out var images) && images.GetArrayLength() > 0
                     ? images[0].GetProperty("url").GetString()
-                    : null
+                    : null,
+                spotifyUrl = item.TryGetProperty("external_urls", out var urls)
+                             && urls.TryGetProperty("spotify", out var spotifyUrl)
+                    ? spotifyUrl.GetString()
+                    : null,
+                popularity = item.TryGetProperty("popularity", out var pop) ? pop.GetInt32() : 0
             });
         }
 

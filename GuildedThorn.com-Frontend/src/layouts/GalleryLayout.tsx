@@ -3,12 +3,12 @@ import GalleryNav from "@components/ui/GalleryNav.tsx";
 
 export default function GalleryLayout() {
     return (
-        <div className="flex flex-col bg-white text-gray-800 dark:bg-gray-900 dark:text-white">
+        <div className="flex min-h-dvh flex-col bg-background text-foreground">
             <header>
                 <GalleryNav/>
             </header>
 
-            <main className="flex-grow container mx-auto p-6">
+            <main className="page flex-grow">
                 <Outlet />
             </main>
         </div>
