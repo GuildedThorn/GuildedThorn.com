@@ -14,6 +14,7 @@ public class User {
     public string Email { get; set; } = string.Empty;
     public required string Role { get; set; }
     public required List<string> Permissions { get; set; }
+    public bool TwoFactorEnabled { get; set; } = false;
     public DateTime CreatedAt { get; set; }
 }
 
