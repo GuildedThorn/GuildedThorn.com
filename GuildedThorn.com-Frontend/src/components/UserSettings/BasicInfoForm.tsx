@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import TextInput from "@components/ui/TextInput";
+import { Button } from "@components/ui/Button";
 
 export default function BasicInfoForm() {
     const [FirstName, setFirstName] = useState('')
@@ -40,44 +42,33 @@ export default function BasicInfoForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2 text-left">
             <h2 className="text-xl font-semibold">Basic Info</h2>
 
-            <div>
-                <label className="block text-sm font-medium">First Name</label>
-                <input
-                    type="text"
-                    className="input border-white border-2 p-4 rounded-lg"
-                    value={FirstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                />
-            </div>
+            <TextInput
+                id="firstName"
+                label="First Name"
+                value={FirstName}
+                onChange={(e) => setFirstName(e.target.value)}
+            />
 
-            <div>
-                <label className="block text-sm font-medium">Last Name</label>
-                <input
-                    type="text"
-                    className="input border-white border-2 p-4 rounded-lg"
-                    value={LastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                />
-            </div>
+            <TextInput
+                id="lastName"
+                label="Last Name"
+                value={LastName}
+                onChange={(e) => setLastName(e.target.value)}
+            />
 
-            <div>
-                <label className="block text-sm font-medium">Email</label>
-                <input
-                    type="email"
-                    className="input border-white border-2 p-4 rounded-lg"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-            </div>
+            <TextInput
+                id="email"
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-            <button type="submit">Update Info</button>
+            <Button type="submit">Update Info</Button>
         </form>
     )
 }

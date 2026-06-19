@@ -1,11 +1,17 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
+using Fido2NetLib;
+using Microsoft.AspNetCore.RateLimiting;
 using GuildedThorn.com.Models;
 using GuildedThorn.com.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -14,7 +20,9 @@ using Serilog;
 using Serilog.Sinks.Grafana.Loki;
 
 // ---------- Load env first ----------
-DotNetEnv.Env.Load(".env");
+// Optional: container / CI / flake deploys supply real environment variables
+// directly, so don't crash when there's no .env file on disk.
+if (File.Exists(".env")) DotNetEnv.Env.Load(".env");
 
 // ---------- Create builder ----------
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +31,9 @@ var services = builder.Services;
 // Merge config from appsettings + config.json + .env
 builder.Configuration
     .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("Resources/config.json", optional: false, reloadOnChange: true)
+    // Optional: env vars can supply every required key (the explicit null-checks
+    // below still fail fast if a critical value is missing from all sources).
+    .AddJsonFile("Resources/config.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 var configuration = builder.Configuration;
 
@@ -52,6 +62,7 @@ services.AddHttpClient();
 services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
+services.AddHealthChecks();
 
 // ---- JWT signing key ----
 var keyBytes = Convert.FromBase64String(
@@ -124,23 +135,116 @@ services.AddSignalR(hubOpts => {
 services.AddSingleton<MongoDbService>();
 services.AddSingleton<RabbitMqService>();
 services.AddScoped<ChatService>();
+services.AddSingleton<ChatModerationService>();
 services.AddSingleton<RadioService>();
+services.AddSingleton<PushNotificationService>();
+services.AddSingleton<JwtTokenService>();
+
+// ---- WebAuthn / FIDO2 (YubiKey) ----
+// RP ID must be the site's registrable domain (no scheme/port); Origins must be
+// the exact browser origins. Defaults target local dev; set Fido2:* in config
+// for production (ServerDomain = "guildedthorn.com", Origins = "https://guildedthorn.com").
+services.AddSingleton<WebAuthnChallengeStore>();
+services.AddFido2(options => {
+    options.ServerDomain = builder.Configuration["Fido2:ServerDomain"] ?? "localhost";
+    options.ServerName = builder.Configuration["Fido2:ServerName"] ?? "GuildedThorn";
+    var origins = builder.Configuration.GetSection("Fido2:Origins").Get<string[]>()
+        ?? new[] { "https://localhost:5173" };
+    options.Origins = new HashSet<string>(origins);
+});
+services.AddHostedService<RadioSourceListener>(); // Mixxx → backend source server (127.0.0.1:8000)
+
+// ---- Forwarded headers (real client IP/scheme behind a reverse proxy) ----
+// So rate limiting keys on the true client IP and logs/redirects use the right
+// scheme. Assumes the app is only reachable through the proxy; if the app is
+// directly exposed, set KnownProxies/KnownNetworks instead of clearing them.
+services.Configure<ForwardedHeadersOptions>(options => {
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// ---- HSTS (tell browsers to stick to HTTPS) ----
+services.AddHsts(options => {
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = true;
+    options.Preload = true;
+});
+
+// ---- Rate limiting ----
+// Per-IP fixed windows. "auth" guards login/registration from brute force;
+// "contact" throttles the anonymous contact form against spam.
+services.AddRateLimiter(options => {
+    options.RejectionStatusCode = 429;
+
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+
+    options.AddPolicy("contact", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(10),
+                QueueLimit = 0,
+            }));
+});
 
 // ---------- Build ----------
 var app = builder.Build();
 
 // ---------- Middleware ----------
+// Must run first so the real client IP/scheme is known to everything below
+// (rate limiter, HTTPS redirect, logging).
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// HSTS only outside Development (localhost + HSTS caching is a nuisance in dev).
+if (!app.Environment.IsDevelopment()) {
+    app.UseHsts();
+}
+
 app.UseHttpsRedirection();
+
+// ---- Security headers on every response ----
+app.Use(async (context, next) => {
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
+    headers["Content-Security-Policy"] =
+        "default-src 'self'; " +
+        "base-uri 'self'; " +
+        "object-src 'none'; " +
+        "frame-ancestors 'none'; " +
+        "img-src 'self' data: https:; " +
+        "font-src 'self' data:; " +
+        "style-src 'self' 'unsafe-inline'; " +  // React sets inline styles (e.g. language colors)
+        "script-src 'self'; " +
+        "connect-src 'self' https: wss:; " +     // /api, SignalR (wss), GitHub calendar
+        "form-action 'self'; " +
+        "upgrade-insecure-requests";
+    await next();
+});
+
 app.UseStaticFiles();
 
 app.UseRouting();
 
 app.UseCors("AllowFrontend");
+
+app.UseRateLimiter();
 
 // ---- Auth must be after CORS & before endpoints ----
 app.UseAuthentication();
@@ -148,8 +252,62 @@ app.UseAuthorization();
 
 // ---- Hubs & Controllers ----
 app.MapHub<ChatHub>("/chathub").RequireCors("AllowFrontend");
+app.MapHub<RadioHub>("/radiohub").RequireCors("AllowFrontend");
 app.MapControllers().RequireCors("AllowFrontend");
+app.MapHealthChecks("/health").AllowAnonymous();
 
-app.MapFallbackToFile("index.html");
+app.MapGet("/404", context => ServeSpaIndex(context, StatusCodes.Status404NotFound));
+
+var spaRoutes = new[] {
+    "/",
+    "/login",
+    "/register",
+    "/contact",
+    "/net",
+    "/stream",
+    "/tools",
+    "/tools/{tool}",
+    "/privacy",
+    "/cookies",
+    "/resume",
+    "/projects",
+    "/uses",
+    "/blog/pages",
+    "/blog/pages/{id}",
+    "/gallery/images",
+    "/gallery/images/{id}",
+    "/settings",
+    "/inbox",
+    "/guestbook",
+    "/radio",
+    "/blog/upload",
+    "/gallery/upload",
+};
+
+foreach (var route in spaRoutes) {
+    app.MapGet(route, context => ServeSpaIndex(context, StatusCodes.Status200OK));
+}
+
+app.MapFallback(context => {
+    // Unknown API routes get a plain 404 — never the SPA's HTML shell.
+    if (context.Request.Path.StartsWithSegments("/api")) {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return Task.CompletedTask;
+    }
+    return ServeSpaIndex(context, StatusCodes.Status404NotFound);
+});
 
 app.Run();
+
+static Task ServeSpaIndex(HttpContext context, int statusCode) {
+    context.Response.StatusCode = statusCode;
+    context.Response.ContentType = "text/html; charset=utf-8";
+    return context.Response.SendFileAsync(Path.Combine(
+        context.RequestServices.GetRequiredService<IHostEnvironment>().ContentRootPath,
+        "wwwroot",
+        "index.html"));
+}
+
+// Exposed so integration tests can boot the real app via
+// WebApplicationFactory<Program>.
+public partial class Program { }

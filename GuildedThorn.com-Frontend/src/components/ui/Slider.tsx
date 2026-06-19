@@ -16,13 +16,13 @@ interface SliderProps {
  * The parent component keeps `value` as `[number]` so `handleVolumeChange(val:number[])` works unmodified.
  */
 const Slider: React.FC<SliderProps> = ({
-                                           value,
-                                           min = 0,
-                                           max = 100,
-                                           step = 1,
-                                           onValueChange,
-                                           className = "",
-                                       }) => {
+    value,
+    min = 0,
+    max = 100,
+    step = 1,
+    onValueChange,
+    className = "",
+}) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         onValueChange([Number(e.target.value)]);
     };
@@ -35,7 +35,7 @@ const Slider: React.FC<SliderProps> = ({
             max={max}
             step={step}
             onChange={handleChange}
-            className={`w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-600 ${className}`}
+            className={`h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary ${className}`}
         />
     );
 };

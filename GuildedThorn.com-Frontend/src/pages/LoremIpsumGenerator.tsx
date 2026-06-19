@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Input } from "@components/ui/Input";
+import { Textarea } from "@components/ui/TextArea";
+import { Button } from "@components/ui/Button";
 
 // Simple Lorem Ipsum words
 const LOREM_WORDS = [
@@ -14,16 +17,16 @@ export default function LoremIpsumGenerator() {
 
     const generate = () => {
         if (type === "words") {
-            let text = [];
+            const text = [];
             for (let i = 0; i < amount; i++) {
                 text.push(LOREM_WORDS[Math.floor(Math.random() * LOREM_WORDS.length)]);
             }
             setOutput(text.join(" "));
         } else if (type === "sentences") {
-            let text = [];
+            const text = [];
             for (let i = 0; i < amount; i++) {
-                let sentence = [];
-                let sentenceLength = 5 + Math.floor(Math.random() * 10);
+                const sentence = [];
+                const sentenceLength = 5 + Math.floor(Math.random() * 10);
                 for (let j = 0; j < sentenceLength; j++) {
                     sentence.push(LOREM_WORDS[Math.floor(Math.random() * LOREM_WORDS.length)]);
                 }
@@ -31,13 +34,13 @@ export default function LoremIpsumGenerator() {
             }
             setOutput(text.join(" "));
         } else if (type === "paragraphs") {
-            let text = [];
+            const text = [];
             for (let i = 0; i < amount; i++) {
-                let paragraph = [];
-                let sentenceCount = 3 + Math.floor(Math.random() * 5);
+                const paragraph = [];
+                const sentenceCount = 3 + Math.floor(Math.random() * 5);
                 for (let j = 0; j < sentenceCount; j++) {
-                    let sentenceLength = 5 + Math.floor(Math.random() * 10);
-                    let sentence = [];
+                    const sentenceLength = 5 + Math.floor(Math.random() * 10);
+                    const sentence = [];
                     for (let k = 0; k < sentenceLength; k++) {
                         sentence.push(LOREM_WORDS[Math.floor(Math.random() * LOREM_WORDS.length)]);
                     }
@@ -55,45 +58,41 @@ export default function LoremIpsumGenerator() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto my-6 p-4 border rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">Lorem Ipsum Generator</h2>
+        <div className="panel p-6 text-left">
+            <h2 className="mb-4 text-xl font-bold">Lorem Ipsum Generator</h2>
 
-            <div className="flex gap-2 mb-4">
+            <div className="mb-4 flex flex-wrap gap-2">
                 <select
                     value={type}
-                    onChange={(e) => setType(e.target.value as any)}
-                    className="border rounded px-2 py-1"
+                    onChange={(e) => setType(e.target.value as "words" | "sentences" | "paragraphs")}
+                    className="h-10 rounded-lg border border-input bg-background px-3 text-sm shadow-sm
+                        transition-colors focus-visible:border-ring focus-visible:outline-none
+                        focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                     <option value="words">Words</option>
                     <option value="sentences">Sentences</option>
                     <option value="paragraphs">Paragraphs</option>
                 </select>
-                <input
+                <Input
                     type="number"
                     value={amount}
                     min={1}
                     onChange={(e) => setAmount(parseInt(e.target.value))}
-                    className="border rounded px-2 py-1 w-24"
+                    className="w-24"
                 />
-                <button
-                    onClick={generate}
-                    className="px-4 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition"
-                >
+                <Button onClick={generate} className="bg-success hover:bg-success/90">
                     Generate
-                </button>
-                <button
-                    onClick={copyToClipboard}
-                    className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                >
+                </Button>
+                <Button onClick={copyToClipboard}>
                     Copy
-                </button>
+                </Button>
             </div>
 
-            <textarea
+            <Textarea
                 readOnly
                 value={output}
                 rows={10}
-                className="w-full border rounded px-2 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="font-mono"
             />
         </div>
     );

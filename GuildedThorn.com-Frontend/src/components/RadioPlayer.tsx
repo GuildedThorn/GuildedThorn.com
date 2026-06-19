@@ -1,65 +1,99 @@
 import { useState, useEffect, useRef } from "react";
 
+// Lightweight standalone radio player. Talks to our own backend (RadioController)
+// — the same endpoints the full /radio page uses — via relative URLs, so it's
+// proxied in dev and same-origin in prod. Embeddable anywhere.
+const STREAM_URL = "/api/radio/stream";
+const STATUS_URL = "/api/radio/status";
+
+// Shape of GET /api/radio/status.
+interface RadioStatus {
+    online: boolean;
+    name?: string;
+    title?: string;
+    artist?: string;
+    listeners?: number;
+}
+
 function RadioPlayer() {
     const [isPlaying, setIsPlaying] = useState(false);
-    const [currentSong, setCurrentSong] = useState("Loading...");
-    const audioRef = useRef(null);
+    const [online, setOnline] = useState<boolean | null>(null);
+    const [nowPlaying, setNowPlaying] = useState("Loading…");
+    const audioRef = useRef<HTMLAudioElement>(null);
 
-    // Poll Icecast status endpoint for metadata every 10s
+    // Poll our backend status endpoint for on-air state + "now playing".
     useEffect(() => {
-        const fetchMetadata = async () => {
+        let active = true;
+
+        const fetchStatus = async () => {
             try {
-                const res = await fetch("https://radio.guildedthorn.com/status-json.xsl");
-                if (!res.ok) throw new Error("Failed to fetch metadata");
-                const data = await res.json();
+                const res = await fetch(STATUS_URL, { cache: "no-store" });
+                if (!res.ok) throw new Error(`status ${res.status}`);
+                const data = (await res.json()) as RadioStatus;
+                if (!active) return;
 
-                // Navigate JSON to get current song title
-                // Icecast JSON structure may vary; example below assumes:
-                // data.icestats.source[0].title or data.icestats.source.title if only one source
-                let title = "Unknown Song";
-
-                if (data.icestats.source) {
-                    const source = Array.isArray(data.icestats.source) ? data.icestats.source[0] : data.icestats.source;
-                    title = source.title || source.artist || source.song || "Unknown Song";
+                setOnline(data.online);
+                if (!data.online) {
+                    setNowPlaying("Stream offline");
+                } else {
+                    const parts = [data.artist, data.title].filter(Boolean);
+                    setNowPlaying(parts.length ? parts.join(" — ") : "Live");
                 }
-
-                setCurrentSong(title);
-            } catch (e) {
-                setCurrentSong("No metadata available");
+            } catch {
+                if (active) {
+                    setOnline(false);
+                    setNowPlaying("Stream offline");
+                }
             }
         };
 
-        fetchMetadata();
-        const interval = setInterval(fetchMetadata, 10000); // every 10 seconds
-
-        return () => clearInterval(interval);
+        fetchStatus();
+        const interval = setInterval(fetchStatus, 10000);
+        return () => {
+            active = false;
+            clearInterval(interval);
+        };
     }, []);
 
+    // If the broadcast ends while we're playing, reset the button state.
+    useEffect(() => {
+        if (online === false && isPlaying) {
+            audioRef.current?.pause();
+            setIsPlaying(false);
+        }
+    }, [online, isPlaying]);
+
     const togglePlay = () => {
-        if (!audioRef.current) return;
+        const audio = audioRef.current;
+        if (!audio) return;
         if (isPlaying) {
-            // @ts-ignore
-            audioRef.current.pause();
+            audio.pause();
             setIsPlaying(false);
         } else {
-            // @ts-ignore
-            audioRef.current.play();
-            setIsPlaying(true);
+            // Reload so playback starts at the live edge, not stale buffered audio.
+            audio.load();
+            audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
         }
     };
 
     return (
-        <div className="flex flex-col items-center space-y-4 p-4 border rounded-lg shadow bg-gray-900 text-white">
-            <audio ref={audioRef} src="https://radio.guildedthorn.com" preload="none" />
+        <div className="panel flex flex-col items-center space-y-4 p-4">
+            <audio ref={audioRef} src={STREAM_URL} preload="none" />
             <button
                 onClick={togglePlay}
-                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition"
+                disabled={online === false}
+                className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground
+                    shadow-sm transition-colors hover:bg-primary/90 hover:text-primary-foreground
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                    disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isPlaying ? "Pause" : "Play"}
             </button>
             <div className="text-center">
-                <p className="text-lg font-semibold">Now Playing:</p>
-                <p className="italic">{currentSong}</p>
+                <p className="text-lg font-semibold">
+                    {online === null ? "Checking…" : online ? "Now Playing:" : "Offline"}
+                </p>
+                <p className="italic text-muted-foreground">{nowPlaying}</p>
             </div>
         </div>
     );

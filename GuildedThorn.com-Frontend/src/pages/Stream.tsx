@@ -1,4 +1,14 @@
 import { useEffect } from "react";
+import { Button } from "@components/ui/Button";
+import { useConsent } from "@components/ConsentContext";
+
+declare global {
+	interface Window {
+		Twitch: {
+			Embed: new (id: string, options: Record<string, unknown>) => unknown;
+		};
+	}
+}
 
 const Twitch = () => {
 	useEffect(() => {
@@ -11,7 +21,6 @@ const Twitch = () => {
 			document.body.appendChild(script);
 
 			script.onload = () => {
-				// @ts-ignore
 				new window.Twitch.Embed("twitch-embed", {
 					width: "100%",
 					height: 480,
@@ -20,7 +29,6 @@ const Twitch = () => {
 				});
 			};
 		} else {
-			// @ts-ignore
 			new window.Twitch.Embed("twitch-embed", {
 				width: "100%",
 				height: 480,
@@ -34,26 +42,40 @@ const Twitch = () => {
 };
 
 const Stream = () => {
+	const { functional, openSettings } = useConsent();
+
 	return (
-		<>
-			<div className="mb-4 ps-2 lg:mb-0 lg:pe-1 lg:ps-0 py-8">
-				<h1>xGuildedThorn</h1>
-				<div className="twitch-embed">
+		<div className="page">
+			<h1 className="mb-4 text-3xl font-bold tracking-tight">xGuildedThorn</h1>
+			<div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+				{functional ? (
 					<Twitch />
-				</div>
-				<p className="text-lg font-semibold mb-2">
-					Check out my stream schedule!
-				</p>
-				<a
-					href="https://www.twitch.tv/xGuildedThorn/schedule"
-					target="_blank"
-					rel="noopener noreferrer"
-					className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
-				>
-					View Schedule on Twitch
-				</a>
+				) : (
+					<div className="flex flex-col items-center gap-3 bg-muted/40 p-10 text-center">
+						<p className="max-w-sm text-sm text-muted-foreground">
+							The Twitch stream is third-party content that may set its own cookies.
+							Enable third-party content to watch it here.
+						</p>
+						<Button size="sm" onClick={openSettings}>
+							Cookie settings
+						</Button>
+					</div>
+				)}
 			</div>
-		</>
+			<p className="mb-2 mt-6 text-lg font-semibold">
+				Check out my stream schedule!
+			</p>
+			<a
+				href="https://www.twitch.tv/xGuildedThorn/schedule"
+				target="_blank"
+				rel="noopener noreferrer"
+				className="inline-flex items-center rounded-lg bg-purple-600 px-4 py-2 font-medium
+					text-white shadow-sm transition-colors hover:bg-purple-700 hover:text-white
+					focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+			>
+				View Schedule on Twitch
+			</a>
+		</div>
 	);
 };
 

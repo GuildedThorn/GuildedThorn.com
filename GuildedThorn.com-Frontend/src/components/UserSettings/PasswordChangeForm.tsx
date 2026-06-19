@@ -1,4 +1,6 @@
 import { useState } from "react";
+import PasswordInput from "@components/ui/PasswordInput";
+import { Button } from "@components/ui/Button";
 
 export default function PasswordChangeForm() {
     const [currentPassword, setCurrentPassword] = useState("");
@@ -30,7 +32,7 @@ export default function PasswordChangeForm() {
 
             if (!response.ok) {
                 const { message } = await response.json();
-                new Error(message || "Failed to change password.");
+                throw new Error(message || "Failed to change password.");
             }
 
             setStatus("success");
@@ -50,55 +52,41 @@ export default function PasswordChangeForm() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2 text-left">
             <h2 className="text-xl font-semibold">Change Password</h2>
 
             {status !== "idle" && (
                 <div
                     className={`text-sm ${
-                        status === "success" ? "text-green-600" : "text-red-600"
+                        status === "success" ? "text-success" : "text-destructive"
                     }`}
                 >
                     {message}
                 </div>
             )}
 
-            <div>
-                <label className="block text-sm font-medium">Current Password</label>
-                <input
-                    type="password"
-                    className="input border-white border-2 p-4 rounded-lg"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                />
-            </div>
+            <PasswordInput
+                id="currentPassword"
+                label="Current Password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+            />
 
-            <div>
-                <label className="block text-sm font-medium">New Password</label>
-                <input
-                    type="password"
-                    className="input border-white border-2 p-4 rounded-lg"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                />
-            </div>
+            <PasswordInput
+                id="newPassword"
+                label="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+            />
 
-            <div>
-                <label className="block text-sm font-medium">Confirm New Password</label>
-                <input
-                    type="password"
-                    className="input border-white border-2 p-4 rounded-lg"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                />
-            </div>
+            <PasswordInput
+                id="confirmPassword"
+                label="Confirm New Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+            />
 
-            <button type="submit" className="btn border-white border-2 p-4 rounded-lg">
-                Update Password
-            </button>
+            <Button type="submit">Update Password</Button>
         </form>
     );
 }

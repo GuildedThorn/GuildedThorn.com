@@ -15,10 +15,12 @@ export type Project = {
 	forks: number;
 };
 
-export type Artist = {	
+export type Artist = {
 	name: string;
 	genres: string[];
 	imageUrl?: string;
+	spotifyUrl?: string;
+	popularity?: number;
 };
 
 export type User = {

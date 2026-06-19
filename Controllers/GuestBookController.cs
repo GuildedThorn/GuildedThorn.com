@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using GuildedThorn.com.Services;
@@ -10,7 +12,7 @@ namespace GuildedThorn.com.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]
-public class GuestBookController(MongoDbService mongoDbService, RabbitMqService rabbitMqService) : ControllerBase {
+public class GuestBookController(MongoDbService mongoDbService, RabbitMqService rabbitMqService, ChatModerationService mod) : ControllerBase {
 
     [Authorize(Policy = "PrivilegedOnly")]
     [HttpPost("message")]      // keep the route short & REST‑y
@@ -30,6 +32,9 @@ public class GuestBookController(MongoDbService mongoDbService, RabbitMqService 
 
         if (string.IsNullOrWhiteSpace(username))
             return Unauthorized("Username claim missing.");
+
+        if (mod.IsBanned(username))
+            return StatusCode(403, "You are banned from posting.");
 
         // ──────────────────────────────────
         // 2. Enforce one‑message‑per‑user
@@ -67,6 +72,59 @@ public class GuestBookController(MongoDbService mongoDbService, RabbitMqService 
             .Limit(pageSize)
             .ToListAsync();
 
-        return Ok(new { items, totalPages });
+        // Look up each author's current avatar so messages can show it.
+        var usernames = items.Select(i => i.Username).Distinct().ToList();
+        var users = await mongoDbService.GetUserCollection()
+            .Find(u => usernames.Contains(u.Username))
+            .ToListAsync();
+        var avatarByUser = users
+            .GroupBy(u => u.Username)
+            .ToDictionary(g => g.Key, g => g.First().AvatarUrl);
+
+        var result = items.Select(i => new {
+            _id = i.Id,
+            username = i.Username,
+            message = i.Message,
+            createdAt = i.CreatedAt,
+            avatarUrl = avatarByUser.TryGetValue(i.Username, out var url) ? url : null
+        });
+
+        return Ok(new { items = result, totalPages });
+    }
+
+    // ──────────────────────────────────
+    // Owner moderation
+    // ──────────────────────────────────
+    [Authorize(Roles = "owner")]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMessage(string id) {
+        var result = await mongoDbService.GetGuestBookCollection()
+            .DeleteOneAsync(g => g.Id == id);
+
+        if (result.DeletedCount == 0) return NotFound();
+        return Ok(new { ok = true });
+    }
+
+    public class BanRequest {
+        public string? Username { get; set; }
+    }
+
+    // Ban a user site-wide (chat + guestbook) and remove their guestbook post.
+    [Authorize(Roles = "owner")]
+    [HttpPost("ban")]
+    public async Task<IActionResult> BanUser([FromBody] BanRequest? req) {
+        var username = req?.Username?.Trim();
+        if (string.IsNullOrWhiteSpace(username))
+            return BadRequest("Username is required.");
+
+        var bannedBy =
+            User.FindFirst(ClaimTypes.Name)?.Value
+            ?? User.Identity?.Name;
+
+        await mod.BanAsync(username, bannedBy);
+        await mongoDbService.GetGuestBookCollection()
+            .DeleteManyAsync(g => g.Username == username);
+
+        return Ok(new { ok = true });
     }
 }

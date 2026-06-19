@@ -1,8 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+export interface AuthUser {
+    name?: string;
+    role?: string;
+    avatarUrl?: string;
+    [key: string]: unknown;        // expand later
+}
+
 type AuthContextType = {
     isAuthenticated: boolean;
-    user: any | null;              // expand later
+    user: AuthUser | null;
     loading: boolean;
     refresh: () => Promise<void>;  // lets you re‑check manually
 };
@@ -16,7 +23,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [user, setUser] = useState<any | null>(null);
+    const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
 
     const refresh = async () => {

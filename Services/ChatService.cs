@@ -25,10 +25,25 @@ public class ChatService {
         await _messages.InsertOneAsync(message);
     }
 
+    // Oldest-first, ready to render in a chat window.
     public async Task<List<ChatMessage>> GetRecentMessagesAsync(int limit = 100) {
-        return await _messages.Find(_ => true)
+        var messages = await _messages.Find(_ => true)
             .SortByDescending(m => m.Timestamp)
             .Limit(limit)
             .ToListAsync();
+        messages.Reverse();
+        return messages;
+    }
+
+    public async Task DeleteMessageAsync(string id) {
+        await _messages.DeleteOneAsync(m => m.Id == id);
+    }
+
+    public async Task DeleteByUserAsync(string username) {
+        await _messages.DeleteManyAsync(m => m.User == username);
+    }
+
+    public async Task ClearAllAsync() {
+        await _messages.DeleteManyAsync(_ => true);
     }
 }
