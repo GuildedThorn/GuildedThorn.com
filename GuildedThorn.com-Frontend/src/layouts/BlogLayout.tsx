@@ -3,12 +3,12 @@ import BlogNav from "@components/ui/BlogNav.tsx";
 
 export default function BlogLayout() {
     return (
-        <div className="flex flex-col bg-white text-gray-800 dark:bg-gray-900 dark:text-white">
+        <div className="flex min-h-dvh flex-col bg-background text-foreground">
             <header>
                 <BlogNav/>
             </header>
 
-            <main className="flex-grow container mx-auto p-6">
+            <main className="page flex-grow">
                 <Outlet />
             </main>
         </div>
