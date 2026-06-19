@@ -20,3 +20,8 @@ GuildedThorn.com-Frontend/stats.html
 Resources/config.json
 # Local dev TLS certs (mkcert)
 certs/
+
+# Nix build result symlinks
+/result
+/result-*
+/fetch-deps
