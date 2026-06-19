@@ -3,14 +3,22 @@
 
 # Dotnet Generated files
 /publish
-/obj
-/bin
+**/bin/
+**/obj/
 
 # Node.js Generated files
 /node_modules
 /dist
 /wwwroot
+# This is a Bun project — track bun.lock, ignore the npm lockfile
+package-lock.json
+# rollup-plugin-visualizer bundle-stats output
+GuildedThorn.com-Frontend/stats.html
 
 # Credential Files
 /Secrets
 *.env
+# App config holds secrets (VAPID key etc.) — supply via env vars in prod
+Resources/config.json
+# Local dev TLS certs (mkcert)
+certs/
