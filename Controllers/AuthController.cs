@@ -11,6 +11,7 @@ using GuildedThorn.com.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
@@ -35,9 +36,26 @@ public class AuthController(MongoDbService mongoDbService, SymmetricSecurityKey 
             .Find(u => u.Username == username)
             .FirstOrDefaultAsync();
 
-        return Ok(user);
+        if (user == null) return NotFound("User not found.");
+
+        return Ok(ToSafeUser(user));
     }
-    
+
+    // Project a User to a client-safe shape — never expose PasswordHash.
+    private static object ToSafeUser(User u) => new {
+        id = u.Id,
+        name = u.Username,
+        username = u.Username,
+        role = u.Role,
+        avatarUrl = u.AvatarUrl,
+        firstName = u.FirstName,
+        lastName = u.LastName,
+        email = u.Email,
+        permissions = u.Permissions,
+        twoFactorEnabled = u.TwoFactorEnabled,
+        createdAt = u.CreatedAt,
+    };
+
     [HttpGet("check")]
     public IActionResult CheckAuthentication() {
         var token = Request.Cookies["token"];
@@ -74,14 +92,21 @@ public class AuthController(MongoDbService mongoDbService, SymmetricSecurityKey 
     }
     
     // Example: Login endpoint using MongoDB to fetch user data
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest) { 
+    public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest) {
         var user = await mongoDbService.GetUserCollection()
             .Find(u => u.Username == loginRequest.Username)
             .FirstOrDefaultAsync();
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.PasswordHash)) {
             return Unauthorized("Invalid credentials.");
+        }
+
+        if (user.TwoFactorEnabled) {
+            // Password is correct, but a security key is required. Don't issue the
+            // cookie yet — the client completes a WebAuthn assertion next.
+            return Ok(new { twoFactorRequired = true });
         }
 
         // Generate a JWT Token and send it in the response
@@ -96,9 +121,10 @@ public class AuthController(MongoDbService mongoDbService, SymmetricSecurityKey 
 
         Response.Cookies.Append("token", token, cookieOptions);
 
-        return Ok();
+        return Ok(new { twoFactorRequired = false });
     }
     
+    [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<IActionResult> RegisterUser([FromBody] RegisterRequest registerRequest) {
         
@@ -179,7 +205,7 @@ public class AuthController(MongoDbService mongoDbService, SymmetricSecurityKey 
             issuer: config["Jwt:Issuer"],
             audience: config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
+            expires: DateTime.UtcNow.AddDays(1), // match the auth cookie lifetime
             signingCredentials: creds
         );
 
@@ -209,9 +235,9 @@ public class AuthController(MongoDbService mongoDbService, SymmetricSecurityKey 
             return NotFound();
         }
 
-        return Ok(user);
+        return Ok(ToSafeUser(user));
     }
-    
+
     [Authorize]
     [HttpPost("logout")]
     public IActionResult Logout() {

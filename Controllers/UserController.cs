@@ -1,7 +1,10 @@
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using GuildedThorn.com.Models;
 using GuildedThorn.com.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
@@ -33,7 +36,9 @@ public class UserController(MongoDbService mongoDbService) : ControllerBase {
 
         // Customize the response data as needed
         var response = new {
-            name = user.Username
+            name = user.Username,
+            role = user.Role,
+            avatarUrl = user.AvatarUrl
         };
 
         return Ok(response);
@@ -91,5 +96,49 @@ public class UserController(MongoDbService mongoDbService) : ControllerBase {
         await mongoDbService.GetUserCollection().ReplaceOneAsync(u => u.Id == user.Id, user);
 
         return Ok(new { message = "User data updated successfully." });
+    }
+
+    [Authorize(Policy = "PrivilegedOnly")]
+    [HttpPost("avatar")]
+    public async Task<IActionResult> UploadAvatar([FromForm] IFormFile? file) {
+        var username = User.FindFirst("name")?.Value;
+        if (string.IsNullOrEmpty(username)) {
+            return Unauthorized("Username is missing from the token.");
+        }
+
+        if (file == null || file.Length == 0) {
+            return BadRequest("No file uploaded.");
+        }
+        if (!file.ContentType.StartsWith("image/")) {
+            return BadRequest("File must be an image.");
+        }
+        if (file.Length > 5 * 1024 * 1024) {
+            return BadRequest("Image must be 5 MB or smaller.");
+        }
+
+        var user = await mongoDbService.GetUserCollection()
+            .Find(u => u.Username == username)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found.");
+        }
+
+        var ext = Path.GetExtension(file.FileName).TrimStart('.').ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext)) {
+            ext = "png";
+        }
+
+        // Save to disk, named by user id so re-uploads overwrite.
+        var savePath = Path.Combine("wwwroot/images/avatars", $"{user.Id}.{ext}");
+        Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+        await using (var stream = new FileStream(savePath, FileMode.Create)) {
+            await file.CopyToAsync(stream);
+        }
+
+        // Cache-busting version so updated avatars show immediately.
+        user.AvatarUrl = $"/images/avatars/{user.Id}.{ext}?v={DateTime.UtcNow.Ticks}";
+        await mongoDbService.GetUserCollection().ReplaceOneAsync(u => u.Id == user.Id, user);
+
+        return Ok(new { avatarUrl = user.AvatarUrl });
     }
 }
