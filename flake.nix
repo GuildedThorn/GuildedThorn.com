@@ -53,6 +53,10 @@
 
           executables = [ "GuildedThorn.com" ];
 
+          # The apphost is named after the assembly, not pname — point `nix run`
+          # (and `program` consumers) at the real binary.
+          meta.mainProgram = "GuildedThorn.com";
+
           postInstall = ''
             mkdir -p $out/lib/guildedthorn/wwwroot
             cp -r ${frontend}/. $out/lib/guildedthorn/wwwroot/
