@@ -28,10 +28,14 @@ public class RadioSourceListener(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         var port = config.GetValue<int?>("Radio:SourcePort") ?? 8000;
-        // Loopback only — nothing exposed off the box.
-        var listener = new TcpListener(IPAddress.Loopback, port);
+        // Bind address is configurable; defaults to loopback (nothing exposed off
+        // the box). Set Radio:SourceBind=0.0.0.0 to accept a source from the LAN —
+        // the port is then gated to private networks at the firewall.
+        var bindAddr = config.GetValue<string>("Radio:SourceBind") ?? "127.0.0.1";
+        var ip = IPAddress.TryParse(bindAddr, out var parsed) ? parsed : IPAddress.Loopback;
+        var listener = new TcpListener(ip, port);
         listener.Start();
-        logger.LogInformation("Radio source listener started on 127.0.0.1:{Port}", port);
+        logger.LogInformation("Radio source listener started on {Bind}:{Port}", ip, port);
 
         try {
             while (!stoppingToken.IsCancellationRequested) {

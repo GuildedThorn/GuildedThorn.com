@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -57,6 +58,12 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // ---------- Services ----------
+// Gallery uploads live outside wwwroot (see GalleryStorage) so frontend builds
+// and publishes can't wipe them. Default: <ContentRoot>/data/gallery.
+services.AddSingleton(new GalleryStorage(
+    configuration["Storage:GalleryPath"]
+        ?? Path.Combine(builder.Environment.ContentRootPath, "data", "gallery")));
+
 services.Configure<SpotifySettings>(configuration.GetSection("Spotify"));
 services.AddHttpClient();
 services.AddControllers();
@@ -228,10 +235,12 @@ app.Use(async (context, next) => {
         "base-uri 'self'; " +
         "object-src 'none'; " +
         "frame-ancestors 'none'; " +
+        // Twitch interactive embed: its iframes (player/chat) on the Stream page.
+        "frame-src https://embed.twitch.tv https://player.twitch.tv https://www.twitch.tv; " +
         "img-src 'self' data: https:; " +
         "font-src 'self' data:; " +
         "style-src 'self' 'unsafe-inline'; " +  // React sets inline styles (e.g. language colors)
-        "script-src 'self'; " +
+        "script-src 'self' https://embed.twitch.tv https://static.cloudflareinsights.com; " +  // Twitch embed loader (embed.twitch.tv/embed/v1.js) + Cloudflare Web Analytics beacon
         "connect-src 'self' https: wss:; " +     // /api, SignalR (wss), GitHub calendar
         "form-action 'self'; " +
         "upgrade-insecure-requests";
@@ -239,6 +248,14 @@ app.Use(async (context, next) => {
 });
 
 app.UseStaticFiles();
+
+// Serve uploaded gallery images from their out-of-wwwroot store at the same
+// /images/gallery URL the frontend already requests.
+app.UseStaticFiles(new StaticFileOptions {
+    FileProvider = new PhysicalFileProvider(
+        app.Services.GetRequiredService<GalleryStorage>().RootPath),
+    RequestPath = "/images/gallery",
+});
 
 app.UseRouting();
 

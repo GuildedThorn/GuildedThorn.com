@@ -106,15 +106,19 @@ export default defineConfig({
         // they live in their lazy route's async chunk — never on initial load.
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
-          if (id.includes('node_modules/react-router') || id.includes('node_modules/@remix-run'))
-            return 'react-router';
-          if (id.includes('node_modules/react-icons')) return 'react-icon';
+          // React core, react-dom AND react-router must share one chunk: if
+          // react-router is split out, its top-level createContext() runs before
+          // the React chunk initializes ("createContext of undefined") and the
+          // app never mounts. Keep them together so init order is guaranteed.
           if (
+            id.includes('node_modules/react-router') ||
+            id.includes('node_modules/@remix-run') ||
             id.includes('node_modules/react-dom') ||
             id.includes('node_modules/scheduler') ||
             /node_modules\/react\//.test(id)
           )
             return 'vendor';
+          if (id.includes('node_modules/react-icons')) return 'react-icon';
         },
       }
     }

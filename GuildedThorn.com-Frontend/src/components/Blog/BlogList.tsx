@@ -188,6 +188,7 @@ export default function BlogList() {
                         <li key={post.id}>
                             <Link
                                 to={`/blog/pages/${post.id}`}
+                                viewTransition
                                 className="group block panel p-5
                                     transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md sm:p-6"
                             >

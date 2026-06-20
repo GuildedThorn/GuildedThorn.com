@@ -1,8 +1,9 @@
 import "@styles/index.css";
 
-import AppRoutes from "@routes/AppRoutes";
+import { router } from "@routes/AppRoutes";
+import { Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
 import { ErrorBoundary } from "@components/ErrorBoundary";
 import {AuthProvider} from "@components/AuthContext.tsx";
 import { ConsentProvider } from "@components/ConsentContext";
@@ -25,9 +26,19 @@ createRoot(document.getElementById("root")!).render(
             <ConsentProvider>
                 <RadioPlayerProvider>
                     <PomodoroProvider>
-                        <BrowserRouter>
-                            <AppRoutes />
-                        </BrowserRouter>
+                        <Suspense
+                            fallback={
+                                <div className="flex min-h-[60vh] items-center justify-center">
+                                    <div
+                                        className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary"
+                                        role="status"
+                                        aria-label="Loading"
+                                    />
+                                </div>
+                            }
+                        >
+                            <RouterProvider router={router} />
+                        </Suspense>
                     </PomodoroProvider>
                 </RadioPlayerProvider>
             </ConsentProvider>
