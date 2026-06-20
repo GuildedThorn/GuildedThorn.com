@@ -1,7 +1,18 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import LazyOnVisible from "@components/LazyOnVisible";
-const GitHubCalendar = lazy(() => import("react-github-calendar"));
+// react-github-calendar is a CJS package. Vite's esbuild prebundle flattens its
+// default export to the component, but rolldown (Vite 8) double-wraps it as
+// { default: { default: Component } } for dynamic imports — React.lazy then gets
+// an object, not a component, and throws "element type is invalid" (#306).
+// Unwrap whichever shape the bundler produces.
+const GitHubCalendar = lazy(() =>
+  import("react-github-calendar").then((m) => {
+    const mod = m as unknown as { default: unknown };
+    const comp = (mod.default as { default?: unknown })?.default ?? mod.default;
+    return { default: comp as typeof m.default };
+  }),
+);
 import {
   populateGithubData,
   populateProjectData,
