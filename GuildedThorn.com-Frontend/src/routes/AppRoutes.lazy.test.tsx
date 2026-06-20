@@ -20,7 +20,7 @@ import { isValidElementType } from "react-is";
 const routeModules: ReadonlyArray<
 	[name: string, importer: () => Promise<{ default: unknown }>]
 > = [
-	["App", () => import("@pages/App.tsx")],
+	// App (the index route) is eagerly imported, not lazy — covered elsewhere.
 	["Stream", () => import("@pages/Stream.tsx")],
 	["Contact", () => import("@pages/Contact.tsx")],
 	["Radio", () => import("@pages/Radio.tsx")],

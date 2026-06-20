@@ -10,10 +10,13 @@ import {
 // Shell + guard load eagerly (tiny, needed on every route).
 import MainLayout from '@layouts/MainLayout';
 import ProtectedRouter from '@routes/ProtectedRouter.tsx';
+// The landing page loads eagerly (not lazy): it's the most-visited route, so
+// bundling it with the entry avoids a lazy-chunk waterfall that delayed FCP/LCP.
+// Its own heavy widgets (GitHub calendar, Discord, Spotify) stay code-split.
+import App from '@pages/App.tsx';
 
 // Everything else is code-split so a route only ships its own JS
 // (e.g. ReactFlow on /net, SignalR on /radio, markdown+highlight on /blog).
-const App = lazy(() => import('@pages/App.tsx'));
 const Stream = lazy(() => import('@pages/Stream.tsx'));
 const Contact = lazy(() => import('@pages/Contact.tsx'));
 const Radio = lazy(() => import('@pages/Radio.tsx'));
