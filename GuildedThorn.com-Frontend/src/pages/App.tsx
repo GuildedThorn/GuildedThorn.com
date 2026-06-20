@@ -389,9 +389,11 @@ function App() {
               have accepted it for me.
             </p>
           </div>
-          <Suspense fallback={null}>
-            <Discord />
-          </Suspense>
+          <LazyOnVisible>
+            <Suspense fallback={null}>
+              <Discord />
+            </Suspense>
+          </LazyOnVisible>
         </Card>
       </div>
 

@@ -14,24 +14,27 @@ namespace GuildedThorn.com.Controllers;
 [Route("/api/[controller]")]
 public class UserController(MongoDbService mongoDbService) : ControllerBase {
     
-    [Authorize(Policy = "PrivilegedOnly")]
+    // AllowAnonymous: the SPA calls this on every page load to hydrate auth
+    // state. Authentication still runs, so a valid cookie populates the claims;
+    // a logged-out visitor gets 204 (not 401) so the browser console stays clean.
+    [AllowAnonymous]
     [HttpGet("me")]
     public async Task<IActionResult> GetUserData() {
-        
+
         // Extract the username from the token claims
         var username = User.FindFirst("name")?.Value;
-    
+
         if (string.IsNullOrEmpty(username)) {
-            return Unauthorized("Username is missing from the token.");
+            return NoContent();
         }
 
         // Retrieve user data from your MongoDB collection by username
         var user = await mongoDbService.GetUserCollection()
             .Find(u => u.Username == username)
             .FirstOrDefaultAsync();
-    
+
         if (user == null) {
-            return NotFound("User not found.");
+            return NoContent();
         }
 
         // Customize the response data as needed

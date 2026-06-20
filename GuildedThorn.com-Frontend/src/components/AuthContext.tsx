@@ -29,8 +29,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const refresh = async () => {
         try {
             const res = await fetch('/api/user/me', { credentials: 'include' });
-            if (res.ok) {
-                const data = await res.json();
+            // 200 = a user; 204 = logged-out (empty body); anything else = error.
+            // json() is guarded so an empty 204 body doesn't throw.
+            const data = res.ok ? await res.json().catch(() => null) : null;
+            if (data) {
                 setUser(data);
                 setIsAuthenticated(true);
             } else {

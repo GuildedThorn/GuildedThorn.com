@@ -148,7 +148,11 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
         const conn = new HubConnectionBuilder()
             .withUrl(RADIO_HUB_URL, { withCredentials: true })
             .withAutomaticReconnect()
-            .configureLogging(LogLevel.Warning)
+            // None: a blocked WebSocket transport (some proxies) logs at error
+            // level even though SignalR silently falls back to SSE/long-polling,
+            // which works. The listener count is non-critical, so keep the
+            // console clean rather than surface a transport that self-heals.
+            .configureLogging(LogLevel.None)
             .build();
         hubRef.current = conn;
         conn.on("ListenerCount", (count: number) => setListeners(count));
