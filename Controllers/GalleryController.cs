@@ -19,7 +19,7 @@ namespace GuildedThorn.com.Controllers;
 [Route("api/[controller]")]
 public class GalleryController(MongoDbService mongoDbService, GalleryStorage galleryStorage) : ControllerBase {
     
-    [Authorize]
+    [AllowAnonymous]
     [HttpGet("getImages")]
     public async Task<IActionResult> GetGalleriesImages(
         [FromQuery] int page = 1,
@@ -61,7 +61,7 @@ public class GalleryController(MongoDbService mongoDbService, GalleryStorage gal
         return Ok(new { items, totalPages, total = totalDocs });
     }
 
-    [Authorize]
+    [AllowAnonymous]
     [HttpGet("getTags")]
     public async Task<IActionResult> GetTags()
     {
@@ -91,7 +91,7 @@ public class GalleryController(MongoDbService mongoDbService, GalleryStorage gal
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
     
-    [Authorize]
+    [AllowAnonymous]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetImage(string id) {
         var coll = mongoDbService.GetGalleryImageCollection();
