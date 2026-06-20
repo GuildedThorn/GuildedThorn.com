@@ -19,9 +19,14 @@ import {
   populateRecentProjectData,
 } from "@backend/api";
 import { Info, Project } from "@backend/types";
-import { Discord } from "@components/Discord";
-import SpotifyTopArtists from "@components/Spotify";
-import SpotifyBanner from "@components/SpotifyBanner";
+// Below-the-fold widgets that each fetch their own data — code-split so their JS
+// (and network calls) stay off the initial load. Discord renders near the top so
+// it's only chunk-split; the Spotify widgets are also gated behind LazyOnVisible.
+const Discord = lazy(() =>
+  import("@components/Discord").then((m) => ({ default: m.Discord })),
+);
+const SpotifyTopArtists = lazy(() => import("@components/Spotify"));
+const SpotifyBanner = lazy(() => import("@components/SpotifyBanner"));
 import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { cn } from "@lib/utils";
@@ -67,6 +72,60 @@ const cars: Automobile[] = [
     ],
   },
 ];
+
+/* Static content — defined once at module scope so it isn't reallocated and
+   re-mapped on every render. */
+const DEVICES: { name: string; detail?: string }[] = [
+  {
+    name: "2011 MacBook Pro",
+    detail: "2TB SSD · 16GB RAM · macOS Sonoma (OpenCore) + Kali Linux",
+  },
+  { name: '2021 iPad Pro 11"' },
+  { name: "iPhone 11" },
+  { name: "Nexus 6P" },
+  { name: "TicWatch Pro 3 GPS" },
+  { name: "Flipper Zero" },
+  { name: "2× HackRF", detail: "one with PortaPack H2" },
+  { name: "RTL-SDR", detail: "Bias Tee 5V FM LNA" },
+  {
+    name: "Wii U",
+    detail: "Modded — Aroma + Tiramisu · 32GB SD, 256GB flash",
+  },
+  { name: "PS4", detail: "Modded — FW 9.0 + ESP32-S2 Mini" },
+  { name: "Xbox One (Original)" },
+  { name: "Xbox One S" },
+  { name: "Steam Deck 1TB" },
+  { name: "2× Quest 2" },
+  { name: "2× Oculus CV1" },
+  { name: "Apple TV 4K (3rd Gen)" },
+];
+
+const ROOM_SETUP: { label: string; value: string }[] = [
+  { label: "Receiver", value: "Pioneer RX-V765" },
+  { label: "Center Speaker", value: "JBL N-Center, Klipsch KSF-C5" },
+  { label: "Left/Right Front", value: "2x Sony 3-way speakers" },
+  { label: "Surround", value: "Legrand + Sharp 3-way speakers" },
+  { label: "Presence", value: "2x Pioneer Graybar TV Speakers" },
+  { label: "Rear", value: "2x Pioneer 3-way speakers" },
+  {
+    label: "Amps",
+    value:
+      "2500W Power Acoustik, 1000W Pioneer, 1000W Skar Audio RP1504AB",
+  },
+  { label: "Right Subwoofer", value: "2x Kicker CompVR" },
+  { label: "Left Subwoofer", value: "2x Kicker CompC" },
+];
+
+// Computed once at module load (it only changes once a year).
+const AGE = (() => {
+  const birthDate = new Date(2003, 2, 17); // Month is 0-indexed (2 = March)
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age--;
+  return age;
+})();
 
 function CarCard({ car }: { car: Automobile }) {
   const doneCount = car.parts.filter((p) => p.done).length;
@@ -148,7 +207,6 @@ function App() {
   const [projectMode, setProjectMode] = useState<ProjectMode>("pinned");
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState("");
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -163,12 +221,10 @@ function App() {
         } else {
           console.error("Fetch error:", error);
         }
-      } finally {
-        setLoading(false);
       }
     }
 
-    loadInfo().then(null);
+    void loadInfo();
 
     return () => controller.abort();
   }, []);
@@ -200,33 +256,10 @@ function App() {
       }
     }
 
-    loadProjects().then(null);
+    void loadProjects();
 
     return () => controller.abort();
   }, [projectMode]);
-
-  function getMyAge(): number {
-    const birthDate = new Date(2003, 2, 17); // Note: Month is 0-indexed (2 = March)
-    const today = new Date();
-
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    const dayDiff = today.getDate() - birthDate.getDate();
-
-    // If today's date is before March 17th in the current year, subtract 1
-    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-      age--;
-    }
-
-    return age;
-  }
-
-  if (loading)
-    return (
-      <div className="p-4 text-center text-muted-foreground">
-        Loading projects...
-      </div>
-    );
 
   return (
     <div className="page">
@@ -260,20 +293,29 @@ function App() {
       <div className="section">
         <Card className="lg:col-span-2">
           <h2 className="text-3xl mb-3">About Me</h2>
-          <img
-            className="w-full max-w-md rounded-2xl shadow-lg mx-auto m-2"
-            src="/images/portrait.jpg"
-            alt="Portrait of Jamie Duddleston"
-            width={1620}
-            height={1080}
-            loading="lazy"
-            decoding="async"
-          />
+          <picture>
+            <source
+              type="image/webp"
+              srcSet="/images/portrait-448.webp 448w, /images/portrait-896.webp 896w"
+              sizes="(max-width: 448px) 100vw, 448px"
+            />
+            <img
+              className="w-full max-w-md rounded-2xl shadow-lg mx-auto m-2"
+              src="/images/portrait-448.jpg"
+              srcSet="/images/portrait-448.jpg 448w, /images/portrait-896.jpg 896w"
+              sizes="(max-width: 448px) 100vw, 448px"
+              alt="Portrait of Jamie Duddleston"
+              width={448}
+              height={299}
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
           <div className={"flex flex-col gap-3"}>
             <p>
               I am{" "}
               <span className="group relative cursor-pointer font-bold border-b border-dashed border-gray-400">
-                {getMyAge()}
+                {AGE}
                 {/* Tooltip Wrapper */}
                 <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 scale-90 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-all group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap">
                   March 17, 2003
@@ -343,7 +385,9 @@ function App() {
               have accepted it for me.
             </p>
           </div>
-          <Discord />
+          <Suspense fallback={null}>
+            <Discord />
+          </Suspense>
         </Card>
       </div>
 
@@ -363,31 +407,7 @@ function App() {
           <div className="tile mt-4 p-4">
             <p className="eyebrow mb-3">Devices</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                {
-                  name: "2011 MacBook Pro",
-                  detail:
-                    "2TB SSD · 16GB RAM · macOS Sonoma (OpenCore) + Kali Linux",
-                },
-                { name: '2021 iPad Pro 11"' },
-                { name: "iPhone 11" },
-                { name: "Nexus 6P" },
-                { name: "TicWatch Pro 3 GPS" },
-                { name: "Flipper Zero" },
-                { name: "2× HackRF", detail: "one with PortaPack H2" },
-                { name: "RTL-SDR", detail: "Bias Tee 5V FM LNA" },
-                {
-                  name: "Wii U",
-                  detail: "Modded — Aroma + Tiramisu · 32GB SD, 256GB flash",
-                },
-                { name: "PS4", detail: "Modded — FW 9.0 + ESP32-S2 Mini" },
-                { name: "Xbox One (Original)" },
-                { name: "Xbox One S" },
-                { name: "Steam Deck 1TB" },
-                { name: "2× Quest 2" },
-                { name: "2× Oculus CV1" },
-                { name: "Apple TV 4K (3rd Gen)" },
-              ].map((device) => (
+              {DEVICES.map((device) => (
                 <div
                   key={device.name}
                   className="rounded-lg bg-background/60 p-3"
@@ -445,29 +465,16 @@ function App() {
             again, but my limited time has prevented me from doing so
           </p>
 
-          <SpotifyBanner />
+          <LazyOnVisible>
+            <Suspense fallback={null}>
+              <SpotifyBanner />
+            </Suspense>
+          </LazyOnVisible>
 
           <div className="tile my-4 p-4 text-left">
             <h2 className="mb-4 text-xl font-semibold">Room Setup</h2>
             <dl className="grid gap-3 sm:grid-cols-2">
-              {[
-                { label: "Receiver", value: "Pioneer RX-V765" },
-                {
-                  label: "Center Speaker",
-                  value: "JBL N-Center, Klipsch KSF-C5",
-                },
-                { label: "Left/Right Front", value: "2x Sony 3-way speakers" },
-                { label: "Surround", value: "Legrand + Sharp 3-way speakers" },
-                { label: "Presence", value: "2x Pioneer Graybar TV Speakers" },
-                { label: "Rear", value: "2x Pioneer 3-way speakers" },
-                {
-                  label: "Amps",
-                  value:
-                    "2500W Power Acoustik, 1000W Pioneer, 1000W Skar Audio RP1504AB",
-                },
-                { label: "Right Subwoofer", value: "2x Kicker CompVR" },
-                { label: "Left Subwoofer", value: "2x Kicker CompC" },
-              ].map(({ label, value }) => (
+              {ROOM_SETUP.map(({ label, value }) => (
                 <div key={label} className="rounded-lg bg-background/60 p-3">
                   <dt className="eyebrow">{label}</dt>
                   <dd className="mt-0.5 text-sm font-medium">{value}</dd>
@@ -476,7 +483,17 @@ function App() {
             </dl>
           </div>
 
-          <SpotifyTopArtists />
+          <LazyOnVisible
+            fallback={
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                Loading top artists…
+              </div>
+            }
+          >
+            <Suspense fallback={null}>
+              <SpotifyTopArtists />
+            </Suspense>
+          </LazyOnVisible>
         </Card>
 
         <Card title={"Software Development"}>
