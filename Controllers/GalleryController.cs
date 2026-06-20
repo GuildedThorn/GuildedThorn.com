@@ -17,7 +17,7 @@ namespace GuildedThorn.com.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class GalleryController(MongoDbService mongoDbService) : ControllerBase {
+public class GalleryController(MongoDbService mongoDbService, GalleryStorage galleryStorage) : ControllerBase {
     
     [Authorize]
     [HttpGet("getImages")]
@@ -133,8 +133,8 @@ public class GalleryController(MongoDbService mongoDbService) : ControllerBase {
         var coll = mongoDbService.GetGalleryImageCollection();
         await coll.InsertOneAsync(newImage);
 
-        // save file to disk (rename to id)
-        var savePath = Path.Combine("wwwroot/images/gallery", $"{newImage.Id}.{newImage.FileType}");
+        // save file to disk (rename to id), in the out-of-wwwroot store
+        var savePath = galleryStorage.PathFor(newImage.Id, newImage.FileType);
         Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
 
         await using (var stream = new FileStream(savePath, FileMode.Create)) {
@@ -153,7 +153,7 @@ public class GalleryController(MongoDbService mongoDbService) : ControllerBase {
         if (image == null)
             return NotFound(new { message = "Image not found" });
 
-        var filePath = Path.Combine("wwwroot/images/gallery", $"{image.Id}.{image.FileType}");
+        var filePath = galleryStorage.PathFor(image.Id, image.FileType);
 
         try {
             if (System.IO.File.Exists(filePath)) {

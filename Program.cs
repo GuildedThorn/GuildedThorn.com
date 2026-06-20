@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -57,6 +58,12 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // ---------- Services ----------
+// Gallery uploads live outside wwwroot (see GalleryStorage) so frontend builds
+// and publishes can't wipe them. Default: <ContentRoot>/data/gallery.
+services.AddSingleton(new GalleryStorage(
+    configuration["Storage:GalleryPath"]
+        ?? Path.Combine(builder.Environment.ContentRootPath, "data", "gallery")));
+
 services.Configure<SpotifySettings>(configuration.GetSection("Spotify"));
 services.AddHttpClient();
 services.AddControllers();
@@ -239,6 +246,14 @@ app.Use(async (context, next) => {
 });
 
 app.UseStaticFiles();
+
+// Serve uploaded gallery images from their out-of-wwwroot store at the same
+// /images/gallery URL the frontend already requests.
+app.UseStaticFiles(new StaticFileOptions {
+    FileProvider = new PhysicalFileProvider(
+        app.Services.GetRequiredService<GalleryStorage>().RootPath),
+    RequestPath = "/images/gallery",
+});
 
 app.UseRouting();
 

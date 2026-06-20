@@ -67,14 +67,24 @@ db.BlogPosts.insertOne({
 print("Seeded markdown test post (" + content.length + " chars)");
 EOF
 
-# ---------- gallery placeholder files (served from wwwroot) ----------
-mkdir -p wwwroot/images/gallery
+# ---------- gallery placeholder files ----------
+# The backend serves uploads from data/gallery (outside wwwroot, so frontend
+# builds/publishes can't wipe them). Keep the dev placeholders there so the
+# seeded GalleryImages docs resolve.
+GALLERY_DIR=data/gallery
+mkdir -p "$GALLERY_DIR"
 # 1x1 red PNG
 PNG_B64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 for i in 1 2 3; do
-    echo "$PNG_B64" | base64 -d > "wwwroot/images/gallery/dev-gallery-$i.png"
+    echo "$PNG_B64" | base64 -d > "$GALLERY_DIR/dev-gallery-$i.png"
 done
-echo "==> Placed 3 placeholder gallery images in wwwroot/images/gallery/"
+# If this was run via sudo (common when the container engine needs root), hand
+# the files the script wrote back to the real user — otherwise the app, running
+# as that user, can't write new uploads into data/gallery later.
+if [ -n "${SUDO_USER:-}" ]; then
+    chown -R "$SUDO_USER" "$GALLERY_DIR" .env 2>/dev/null || true
+fi
+echo "==> Placed 3 placeholder gallery images in $GALLERY_DIR/"
 
 cat <<'EOF'
 

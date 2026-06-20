@@ -25,3 +25,6 @@ certs/
 /result
 /result-*
 /fetch-deps
+
+# Runtime data: uploaded gallery images (served at /images/gallery)
+/data

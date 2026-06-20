@@ -172,6 +172,158 @@
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
 	}
+
+	/* Skip SPA view-transition animations (blog/gallery) for these users. */
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+}
+
+/* ── SPA view transitions (blog + gallery navigations) ──────────────────────
+   Only blog/gallery links/navigations opt in via the `viewTransition` prop, so
+   these styles never touch the rest of the app. Reduced-motion users get none
+   of it (the @media block above zeroes every view-transition animation). */
+@keyframes vt-fade-in {
+	from {
+		opacity: 0;
+	}
+}
+@keyframes vt-fade-out {
+	to {
+		opacity: 0;
+	}
+}
+
+/* Page content (everything not tagged as a shared element): a clean cross-fade. */
+::view-transition-old(root) {
+	animation: vt-fade-out 180ms ease both;
+}
+::view-transition-new(root) {
+	animation: vt-fade-in 220ms ease both;
+}
+
+/* ── Gallery photo carousel ─────────────────────────────────────────────────
+   Pure-CSS navigation: a scroll-snap strip with browser-generated scroll
+   buttons (::scroll-button) and scroll markers/dots (::scroll-marker). The
+   generated buttons + dots are Chromium-only today; everywhere else this
+   gracefully stays a swipeable, scroll-snapping photo strip. */
+.photo-carousel {
+	position: relative;
+	display: flex;
+	height: clamp(360px, 72vh, 900px);
+	margin: 0;
+	padding: 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scroll-snap-type: x mandatory;
+	scroll-behavior: smooth;
+	overscroll-behavior-x: contain;
+	scrollbar-width: none; /* Firefox: hide the native bar for a clean look */
+	anchor-name: --photo-carousel;
+	scroll-marker-group: after;
+}
+.photo-carousel::-webkit-scrollbar {
+	display: none; /* Chromium/WebKit: hide the native bar */
+}
+
+.photo-carousel > li {
+	flex: 0 0 100%;
+	scroll-snap-align: center;
+	scroll-snap-stop: always;
+}
+
+/* Prev / next buttons, vertically centered on the carousel's left/right edges. */
+.photo-carousel::scroll-button(*) {
+	position: absolute;
+	position-anchor: --photo-carousel;
+	z-index: 20;
+	align-self: anchor-center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	border: 1px solid var(--color-border);
+	border-radius: 9999px;
+	background: color-mix(in srgb, var(--color-background) 78%, transparent);
+	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
+	box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+	color: var(--color-foreground);
+	font-size: 1.25rem;
+	line-height: 1;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease,
+		opacity 0.2s ease,
+		translate 0.06s ease;
+}
+.photo-carousel::scroll-button(*):hover {
+	background: var(--color-muted);
+	color: var(--color-primary);
+}
+.photo-carousel::scroll-button(*):focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
+}
+.photo-carousel::scroll-button(*):active {
+	translate: 0 1px;
+}
+.photo-carousel::scroll-button(*):disabled {
+	opacity: 0.25;
+	cursor: default;
+}
+.photo-carousel::scroll-button(left) {
+	content: "‹" / "Previous photo";
+	left: anchor(left);
+	margin-left: 0.85rem;
+}
+.photo-carousel::scroll-button(right) {
+	content: "›" / "Next photo";
+	right: anchor(right);
+	margin-right: 0.85rem;
+}
+
+/* Dots: one per photo, collected and centered along the bottom. */
+.photo-carousel::scroll-marker-group {
+	position: absolute;
+	position-anchor: --photo-carousel;
+	z-index: 20;
+	justify-self: anchor-center;
+	bottom: anchor(bottom);
+	margin-bottom: 0.9rem;
+	display: flex;
+	gap: 0.55rem;
+	padding: 0.45rem 0.7rem;
+	border-radius: 9999px;
+	background: color-mix(in srgb, var(--color-background) 55%, transparent);
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+}
+.photo-carousel > li::scroll-marker {
+	content: attr(data-accname); /* accessible name; visually hidden below */
+	width: 0.6rem;
+	height: 0.6rem;
+	overflow: hidden;
+	text-indent: 1.5rem;
+	white-space: nowrap;
+	border: none;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--color-foreground) 35%, transparent);
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		scale 0.2s ease;
+}
+.photo-carousel > li::scroll-marker:hover {
+	background: color-mix(in srgb, var(--color-foreground) 65%, transparent);
+}
+.photo-carousel > li::scroll-marker:target-current {
+	background: var(--color-primary);
+	scale: 1.3;
 }
 
 @media print {
