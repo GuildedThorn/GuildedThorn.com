@@ -240,7 +240,7 @@ app.Use(async (context, next) => {
         "img-src 'self' data: https:; " +
         "font-src 'self' data:; " +
         "style-src 'self' 'unsafe-inline'; " +  // React sets inline styles (e.g. language colors)
-        "script-src 'self' https://embed.twitch.tv; " +  // Twitch embed loader (embed.twitch.tv/embed/v1.js)
+        "script-src 'self' https://embed.twitch.tv https://static.cloudflareinsights.com; " +  // Twitch embed loader (embed.twitch.tv/embed/v1.js) + Cloudflare Web Analytics beacon
         "connect-src 'self' https: wss:; " +     // /api, SignalR (wss), GitHub calendar
         "form-action 'self'; " +
         "upgrade-insecure-requests";
