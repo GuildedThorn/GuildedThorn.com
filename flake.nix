@@ -22,7 +22,7 @@
 
           # Regenerate after changing package-lock.json:
           #   nix run nixpkgs#prefetch-npm-deps -- GuildedThorn.com-Frontend/package-lock.json
-          npmDepsHash = "sha256-FWi/2Ne9gr1ZJ/6dmf2U1PwP2rqO9H4vfEYfHSFr5Wo=";
+          npmDepsHash = "sha256-4wbVCyEWWyrnUyFa5OuUchLj3z0m9YKg5j4bYAOK754=";
 
           # vite.config.ts writes to ../wwwroot (one level above the source root)
           installPhase = ''
