@@ -88,6 +88,7 @@ export default function BlogPost() {
             <div className="mb-4 flex items-center justify-between">
                 <Link
                     to="/blog/pages"
+                    viewTransition
                     className="inline-flex items-center gap-1.5 text-sm font-medium
                         text-muted-foreground transition-colors hover:text-primary"
                 >
@@ -154,6 +155,7 @@ export default function BlogPost() {
                     {newer ? (
                         <Link
                             to={`/blog/pages/${newer.id}`}
+                            viewTransition
                             className="group panel p-4
                                 transition-all hover:border-primary/50 hover:shadow-md"
                         >
@@ -168,6 +170,7 @@ export default function BlogPost() {
                     {older && (
                         <Link
                             to={`/blog/pages/${older.id}`}
+                            viewTransition
                             className="group panel p-4 text-right
                                 transition-all hover:border-primary/50 hover:shadow-md"
                         >

@@ -5,8 +5,8 @@ import Seo from "@components/Seo";
 const contacts = [
   {
     icon: <Mail className="h-4 w-4" />,
-    label: "guildedthorn@gmail.com",
-    href: "mailto:guildedthorn@gmail.com",
+    label: "jamieduddleston2@gmail.com",
+    href: "mailto:jamieduddleston2@gmail.com",
   },
   {
     icon: <Github className="h-4 w-4" />,
@@ -51,8 +51,16 @@ const experience: Job[] = [
     ],
   },
   {
+    company: "Portillo's",
+    employment: "Feb 2023 - Jan 2024",
+    points: [
+      "Closed restaurant by cleaning dishes, cutting bread, cooking bacon, cleaning back/coolers and freezers of restaurant on a 5pm to 2am basis.",
+      "Cooked and Prepared burgers, chicken and fish sandwiches in situations where restaurant boomed.",
+    ],
+  },
+  {
     company: "Geek Squad",
-    employment: "Seasonal - 3 Months",
+    employment: "Oct 2021 - Jan 2022 - 4 mos (Seasonal)",
     points: [
       "Assisted the customer with hardware and software related issues pertaining to the device they purchased.",
       "Completed numerous functionality checks before products were put onto the floor for the customer to purchase.",
@@ -66,6 +74,11 @@ const education = [
     degree: "High School",
     year: "2021",
     school: "Kennedy High School",
+  },
+  {
+    degree: "Bootcamp",
+    year: "2022 - 2023",
+    school: "New Apprenticeship; IT ServiceNow",
   },
 ];
 

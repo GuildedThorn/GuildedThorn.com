@@ -10,8 +10,6 @@
 /node_modules
 /dist
 /wwwroot
-# This is a Bun project — track bun.lock, ignore the npm lockfile
-package-lock.json
 # rollup-plugin-visualizer bundle-stats output
 GuildedThorn.com-Frontend/stats.html
 
@@ -22,3 +20,11 @@ GuildedThorn.com-Frontend/stats.html
 Resources/config.json
 # Local dev TLS certs (mkcert)
 certs/
+
+# Nix build result symlinks
+/result
+/result-*
+/fetch-deps
+
+# Runtime data: uploaded gallery images (served at /images/gallery)
+/data
