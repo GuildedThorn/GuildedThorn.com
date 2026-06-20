@@ -21,7 +21,11 @@ function RadioLiveToast() {
         const connection = new HubConnectionBuilder()
             .withUrl("/radiohub", { withCredentials: true })
             .withAutomaticReconnect()
-            .configureLogging(LogLevel.Warning)
+            // None: this connects on every page; a proxy/sandbox that blocks the
+            // WebSocket transport logs at error level even though SignalR falls
+            // back to SSE/long-polling. Toasts are non-critical — keep the
+            // console clean rather than surface a transport that self-heals.
+            .configureLogging(LogLevel.None)
             .build();
 
         // RadioHub also broadcasts ListenerCount to every connection; this toast
