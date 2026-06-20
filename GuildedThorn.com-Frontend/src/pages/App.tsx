@@ -307,7 +307,9 @@ function App() {
               alt="Portrait of Jamie Duddleston"
               width={448}
               height={299}
-              loading="lazy"
+              // This is the LCP element on mobile — load it eagerly at high
+              // priority rather than lazily (lazy delayed LCP to ~3s).
+              fetchPriority="high"
               decoding="async"
             />
           </picture>
@@ -354,6 +356,8 @@ function App() {
               className="w-full max-w-md mx-auto"
               src="/images/Print_Transparent.svg"
               alt="GuildedThorn logo"
+              width={1280}
+              height={1024}
               loading="lazy"
               decoding="async"
             />

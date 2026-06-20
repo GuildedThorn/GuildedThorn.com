@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -247,7 +248,22 @@ app.Use(async (context, next) => {
     await next();
 });
 
-app.UseStaticFiles();
+// Cache-Control for static assets. Vite content-hashes everything under
+// /assets/ (JS, CSS, fonts), so those are safe to cache for a year as
+// immutable. index.html must always revalidate so a redeploy is picked up.
+// Everything else (images, theme-init.js, manifest) gets a week.
+void SetStaticCache(StaticFileResponseContext ctx)
+{
+    var resp = ctx.Context.Response;
+    if (ctx.Context.Request.Path.StartsWithSegments("/assets"))
+        resp.Headers.CacheControl = "public, max-age=31536000, immutable";
+    else if (string.Equals(ctx.File.Name, "index.html", StringComparison.OrdinalIgnoreCase))
+        resp.Headers.CacheControl = "no-cache";
+    else
+        resp.Headers.CacheControl = "public, max-age=604800";
+}
+
+app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = SetStaticCache });
 
 // Serve uploaded gallery images from their out-of-wwwroot store at the same
 // /images/gallery URL the frontend already requests.
@@ -255,6 +271,7 @@ app.UseStaticFiles(new StaticFileOptions {
     FileProvider = new PhysicalFileProvider(
         app.Services.GetRequiredService<GalleryStorage>().RootPath),
     RequestPath = "/images/gallery",
+    OnPrepareResponse = SetStaticCache,
 });
 
 app.UseRouting();
