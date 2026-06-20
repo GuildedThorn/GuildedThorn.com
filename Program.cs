@@ -235,10 +235,12 @@ app.Use(async (context, next) => {
         "base-uri 'self'; " +
         "object-src 'none'; " +
         "frame-ancestors 'none'; " +
+        // Twitch interactive embed: its iframes (player/chat) on the Stream page.
+        "frame-src https://embed.twitch.tv https://player.twitch.tv https://www.twitch.tv; " +
         "img-src 'self' data: https:; " +
         "font-src 'self' data:; " +
         "style-src 'self' 'unsafe-inline'; " +  // React sets inline styles (e.g. language colors)
-        "script-src 'self'; " +
+        "script-src 'self' https://embed.twitch.tv; " +  // Twitch embed loader (embed.twitch.tv/embed/v1.js)
         "connect-src 'self' https: wss:; " +     // /api, SignalR (wss), GitHub calendar
         "form-action 'self'; " +
         "upgrade-insecure-requests";
