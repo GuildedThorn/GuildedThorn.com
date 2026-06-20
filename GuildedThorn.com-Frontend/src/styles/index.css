@@ -336,7 +336,7 @@
 	   on <html> — otherwise a dark-theme visitor would print invisible text. */
 	html {
 		color-scheme: light !important;
-		font-size: 13px;
+		font-size: 11px;
 	}
 
 	/* Suppress the browser's own print header/footer (page title, URL, date,
