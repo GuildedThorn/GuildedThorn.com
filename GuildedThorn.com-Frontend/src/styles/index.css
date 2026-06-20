@@ -19,7 +19,9 @@
 	--color-card-foreground: var(--color-foreground);
 
 	--color-muted: light-dark(var(--color-gray-100), var(--color-gray-700));
-	--color-muted-foreground: light-dark(var(--color-gray-500), var(--color-gray-400));
+	/* gray-600 (not 500) in light mode so muted/secondary text clears the 4.5:1
+	   contrast ratio on white and on muted/tile backgrounds (WCAG AA). */
+	--color-muted-foreground: light-dark(var(--color-gray-600), var(--color-gray-400));
 
 	--color-accent: light-dark(var(--color-gray-100), var(--color-gray-700));
 	--color-accent-foreground: var(--color-foreground);

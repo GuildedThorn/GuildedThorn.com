@@ -379,7 +379,7 @@ function App() {
               final dagger to many of the factions I played against. Not too
               long after deciding on the handle I found this on
               <a
-                className="text-primary hover:underline"
+                className="text-primary underline"
                 href={"https://gamejolt.com/games/guilded-thorn/158759"}
               >
                 {" "}
