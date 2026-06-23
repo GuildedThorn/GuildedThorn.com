@@ -65,11 +65,6 @@
     "hash": "sha256-ECgyZ53XqJoRcZexQpctEq1nHFXuW4YqFSx7Elsae7U="
   },
   {
-    "pname": "Microsoft.CSharp",
-    "version": "4.3.0",
-    "hash": "sha256-a3dAiPaVuky0wpcHmpTVtAQJNGZ2v91/oArA+dpJgj8="
-  },
-  {
     "pname": "Microsoft.Extensions.AmbientMetadata.Application",
     "version": "9.2.0",
     "hash": "sha256-CiRMEFOoYUKkAfzZ3vTcoxmBK/emmDf7Q/UIoE4abSw="
@@ -443,6 +438,11 @@
     "pname": "Newtonsoft.Json",
     "version": "10.0.3",
     "hash": "sha256-WEHCjp+OMr5axXQjFsh7TMDE/ttE35nMv5RBPdcxfhs="
+  },
+  {
+    "pname": "Newtonsoft.Json",
+    "version": "13.0.3",
+    "hash": "sha256-hy/BieY4qxBWVVsDqqOPaLy1QobiIapkbrESm6v2PHc="
   },
   {
     "pname": "NSec.Cryptography",
@@ -855,6 +855,11 @@
     "hash": "sha256-RbpqpBsC6RszUU2QOYd+TBCpj3qco9Bhul4SFEx0ijI="
   },
   {
+    "pname": "Stripe.net",
+    "version": "52.0.0",
+    "hash": "sha256-aQ36A8C3pXX2Xp12t7uPi/JyYiC3ekgEwS3k4qwyYgk="
+  },
+  {
     "pname": "Swashbuckle.AspNetCore",
     "version": "8.1.1",
     "hash": "sha256-jaa8tiarHJ609Geikr4RawYUUG9RMt46owI50xxJNmo="
@@ -900,29 +905,9 @@
     "hash": "sha256-KMY5DfJnDeIsa13DpqvyN8NkReZEMAFnlmNglVoFIXI="
   },
   {
-    "pname": "System.Collections.NonGeneric",
-    "version": "4.3.0",
-    "hash": "sha256-8/yZmD4jjvq7m68SPkJZLBQ79jOTOyT5lyzX4SCYAx8="
-  },
-  {
-    "pname": "System.Collections.Specialized",
-    "version": "4.3.0",
-    "hash": "sha256-QNg0JJNx+zXMQ26MJRPzH7THdtqjrNtGLUgaR1SdvOk="
-  },
-  {
-    "pname": "System.ComponentModel",
-    "version": "4.3.0",
-    "hash": "sha256-i00uujMO4JEDIEPKLmdLY3QJ6vdSpw6Gh9oOzkFYBiU="
-  },
-  {
-    "pname": "System.ComponentModel.Primitives",
-    "version": "4.3.0",
-    "hash": "sha256-IOMJleuIBppmP4ECB3uftbdcgL7CCd56+oAD/Sqrbus="
-  },
-  {
-    "pname": "System.ComponentModel.TypeConverter",
-    "version": "4.3.0",
-    "hash": "sha256-PSDiPYt8PgTdTUBz+GH6lHCaM1YgfObneHnZsc8Fz54="
+    "pname": "System.Configuration.ConfigurationManager",
+    "version": "9.0.0",
+    "hash": "sha256-+pLnTC0YDP6Kjw5DVBiFrV/Q3x5is/+6N6vAtjvhVWk="
   },
   {
     "pname": "System.Console",
@@ -940,6 +925,11 @@
     "hash": "sha256-OFJRb0ygep0Z3yDBLwAgM/Tkfs4JCDtsNhwDH9cd1Xw="
   },
   {
+    "pname": "System.Diagnostics.EventLog",
+    "version": "9.0.0",
+    "hash": "sha256-tPvt6yoAp56sK/fe+/ei8M65eavY2UUhRnbrREj/Ems="
+  },
+  {
     "pname": "System.Diagnostics.Tools",
     "version": "4.3.0",
     "hash": "sha256-gVOv1SK6Ape0FQhCVlNOd9cvQKBvMxRX9K0JPVi8w0Y="
@@ -948,11 +938,6 @@
     "pname": "System.Diagnostics.Tracing",
     "version": "4.3.0",
     "hash": "sha256-hCETZpHHGVhPYvb4C0fh4zs+8zv4GPoixagkLZjpa9Q="
-  },
-  {
-    "pname": "System.Dynamic.Runtime",
-    "version": "4.3.0",
-    "hash": "sha256-k75gjOYimIQtLBD5NDzwwi3ZMUBPRW3jmc3evDMMJbU="
   },
   {
     "pname": "System.Formats.Cbor",
@@ -1160,16 +1145,6 @@
     "hash": "sha256-P5jHCgMbgFMYiONvzmaKFeOqcAIDPu/U8bOVrNPYKqc="
   },
   {
-    "pname": "System.Runtime.Serialization.Formatters",
-    "version": "4.3.0",
-    "hash": "sha256-Feic7MGKVG4imh7kpLkPHmApQzYjq7SxHnazh2wZkoQ="
-  },
-  {
-    "pname": "System.Runtime.Serialization.Primitives",
-    "version": "4.3.0",
-    "hash": "sha256-zu5m1M9usend+i9sbuD6Xbizdo8Z6N5PEF9DAtEVewc="
-  },
-  {
     "pname": "System.Security.AccessControl",
     "version": "5.0.0",
     "hash": "sha256-ueSG+Yn82evxyGBnE49N4D+ngODDXgornlBtQ3Omw54="
@@ -1203,6 +1178,11 @@
     "pname": "System.Security.Cryptography.Primitives",
     "version": "4.3.0",
     "hash": "sha256-fnFi7B3SnVj5a+BbgXnbjnGNvWrCEU6Hp/wjsjWz318="
+  },
+  {
+    "pname": "System.Security.Cryptography.ProtectedData",
+    "version": "9.0.0",
+    "hash": "sha256-gPgPU7k/InTqmXoRzQfUMEKL3QuTnOKowFqmXTnWaBQ="
   },
   {
     "pname": "System.Security.Cryptography.X509Certificates",
@@ -1278,11 +1258,6 @@
     "pname": "System.Xml.XDocument",
     "version": "4.3.0",
     "hash": "sha256-rWtdcmcuElNOSzCehflyKwHkDRpiOhJJs8CeQ0l1CCI="
-  },
-  {
-    "pname": "System.Xml.XmlDocument",
-    "version": "4.3.0",
-    "hash": "sha256-kbuV4Y7rVJkfMp2Kgoi8Zvdatm9CZNmlKB3GZgANvy4="
   },
   {
     "pname": "WebPush",
