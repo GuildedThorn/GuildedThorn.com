@@ -56,4 +56,12 @@ public class MongoDbService {
     public IMongoCollection<ChatBan> GetChatBanCollection() {
         return _database.GetCollection<ChatBan>("ChatBans");
     }
+
+    public IMongoCollection<Donation> GetDonationCollection() {
+        return _database.GetCollection<Donation>("Donations");
+    }
+
+    public IMongoCollection<DonationSettings> GetDonationSettingsCollection() {
+        return _database.GetCollection<DonationSettings>("DonationSettings");
+    }
 }

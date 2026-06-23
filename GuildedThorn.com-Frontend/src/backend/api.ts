@@ -357,3 +357,57 @@ export async function setTwoFactor(enabled: boolean) {
 	if (!res.ok) throw await asError(res, "Couldn’t update 2FA.");
 	return res.json();
 }
+
+/* ───────────────────────── Donations ───────────────────────── */
+
+export interface DonationConfig {
+	// True when donations are published OR the caller is the owner (so the owner
+	// can preview the page while it's hidden from everyone else).
+	enabled: boolean;
+	// The raw kill-switch state (what the public sees), for the owner's toggle.
+	published: boolean;
+	// True once Stripe keys are configured on the server.
+	configured: boolean;
+	publishableKey: string;
+	currency: string;
+	presets: number[]; // amounts in the smallest currency unit (cents)
+}
+
+export async function getDonationConfig(): Promise<DonationConfig> {
+	// credentials so the server can read the owner role from the auth cookie.
+	const res = await fetch("/api/donations/config", { credentials: "include" });
+	if (!res.ok) throw await asError(res, "Couldn’t load donation settings.");
+	return res.json();
+}
+
+// Creates a hosted Checkout Session and redirects the browser to Stripe.
+export async function startDonationCheckout(input: {
+	amountCents: number;
+	name?: string;
+	message?: string;
+}): Promise<void> {
+	const res = await fetch("/api/donations/checkout", {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			amountCents: input.amountCents,
+			name: input.name?.trim() || null,
+			message: input.message?.trim() || null,
+		}),
+	});
+	if (!res.ok) throw await asError(res, "Couldn’t start checkout.");
+	const { url } = await res.json();
+	window.location.href = url;
+}
+
+// Owner-only kill switch: flips public visibility of the donate UI.
+export async function setDonationsPublished(published: boolean): Promise<void> {
+	const res = await fetch("/api/donations/publish", {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ published }),
+	});
+	if (!res.ok) throw await asError(res, "Couldn’t update donation visibility.");
+}

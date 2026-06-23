@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Inbox, PenLine, ImagePlus } from "lucide-react";
+import { Inbox, PenLine, ImagePlus, HandCoins } from "lucide-react";
 import { cn } from "@lib/utils";
 import { useAuth } from "@components/AuthContext";
+import { getDonationConfig, setDonationsPublished } from "@backend/api";
 
 /* A slim admin strip rendered just below the main NavBar, shown only to the
    owner. Keeps owner-only actions out of the primary nav to free up space. */
@@ -18,7 +20,39 @@ const items = [
 
 export default function OwnerBar() {
 	const { user, loading } = useAuth();
-	if (loading || user?.role !== "owner") return null;
+	const isOwner = !loading && user?.role === "owner";
+
+	// Donations kill switch: reflects the published flag and lets the owner flip
+	// public visibility live. Loaded only when the owner is present.
+	const [published, setPublished] = useState<boolean | null>(null);
+	const [saving, setSaving] = useState(false);
+
+	useEffect(() => {
+		if (!isOwner) return;
+		let alive = true;
+		getDonationConfig()
+			.then((c) => alive && setPublished(c.published))
+			.catch(() => alive && setPublished(null));
+		return () => {
+			alive = false;
+		};
+	}, [isOwner]);
+
+	if (!isOwner) return null;
+
+	const toggleDonations = async () => {
+		if (published === null || saving) return;
+		const next = !published;
+		setSaving(true);
+		try {
+			await setDonationsPublished(next);
+			setPublished(next);
+		} catch {
+			/* leave the previous state; a failed toggle just doesn't change it */
+		} finally {
+			setSaving(false);
+		}
+	};
 
 	return (
 		<div className="px-3 pt-2 print:hidden">
@@ -36,6 +70,19 @@ export default function OwnerBar() {
 						{it.label}
 					</NavLink>
 				))}
+				<button
+					type="button"
+					onClick={toggleDonations}
+					disabled={published === null || saving}
+					title="Show or hide the donate page for the public"
+					className={cn(
+						"nav-link shrink-0 disabled:opacity-50",
+						published && "text-success",
+					)}
+				>
+					<HandCoins className="h-4 w-4" />
+					Donations: {published === null ? "…" : published ? "On" : "Off"}
+				</button>
 			</div>
 		</div>
 	);

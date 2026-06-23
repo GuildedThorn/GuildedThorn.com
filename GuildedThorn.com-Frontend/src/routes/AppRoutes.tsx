@@ -18,6 +18,7 @@ import App from '@pages/App.tsx';
 // Everything else is code-split so a route only ships its own JS
 // (e.g. ReactFlow on /net, SignalR on /radio, markdown+highlight on /blog).
 const Stream = lazy(() => import('@pages/Stream.tsx'));
+const Donate = lazy(() => import('@pages/Donate.tsx'));
 const Contact = lazy(() => import('@pages/Contact.tsx'));
 const Radio = lazy(() => import('@pages/Radio.tsx'));
 const Login = lazy(() => import('@pages/Login.tsx'));
@@ -62,6 +63,7 @@ export const router = createBrowserRouter(
             <Route path="contact" element={<Contact />} />
             <Route path="net" element={<ThornNet />} />
             <Route path="stream" element={<Stream />} />
+            <Route path="donate" element={<Donate />} />
 
             <Route path="tools" element={<Tools />} />
             {/* Old per-tool URLs redirect to their section on the combined page */}

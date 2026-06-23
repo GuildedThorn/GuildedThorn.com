@@ -180,6 +180,7 @@ services.AddSingleton<ChatModerationService>();
 services.AddSingleton<RadioService>();
 services.AddSingleton<PushNotificationService>();
 services.AddSingleton<JwtTokenService>();
+services.AddSingleton<DonationService>();
 
 // ---- WebAuthn / FIDO2 (YubiKey) ----
 // RP ID must be the site's registrable domain (no scheme/port); Origins must be
@@ -232,6 +233,17 @@ services.AddRateLimiter(options => {
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions {
                 PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(10),
+                QueueLimit = 0,
+            }));
+
+    // "donate" throttles checkout-session creation per IP so the Stripe API
+    // (and our keys) can't be hammered.
+    options.AddPolicy("donate", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions {
+                PermitLimit = 10,
                 Window = TimeSpan.FromMinutes(10),
                 QueueLimit = 0,
             }));
@@ -335,6 +347,7 @@ var spaRoutes = new[] {
     "/contact",
     "/net",
     "/stream",
+    "/donate",
     "/tools",
     "/tools/{tool}",
     "/privacy",

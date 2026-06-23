@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Menu, X, LogOut, LogIn, UserPlus } from "lucide-react";
 import {
   FaBook,
   FaCode,
   FaEnvelope,
+  FaHeart,
   FaImages,
   FaScroll,
   FaStream,
@@ -15,11 +16,24 @@ import { FaRadio } from "react-icons/fa6";
 import { cn } from "@lib/utils";
 import { useAuth } from "@components/AuthContext";
 import { Avatar } from "@components/ui/Avatar";
-import { logout } from "@backend/api";
+import { getDonationConfig, logout } from "@backend/api";
 
 export default function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isAuthenticated, user, loading, refresh } = useAuth();
+
+  // Donate link is hidden until donations are published (owners always see it).
+  // Re-checked when auth state settles so the owner's link appears after login.
+  const [donateEnabled, setDonateEnabled] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getDonationConfig()
+      .then((c) => alive && setDonateEnabled(c.enabled))
+      .catch(() => alive && setDonateEnabled(false));
+    return () => {
+      alive = false;
+    };
+  }, [isAuthenticated]);
 
   const navItems = [
     {
@@ -55,6 +69,15 @@ export default function NavBar() {
       label: "Contact",
       icon: <FaEnvelope className="text-base" />,
     },
+    ...(donateEnabled
+      ? [
+          {
+            to: "/donate",
+            label: "Donate",
+            icon: <FaHeart className="text-base" />,
+          },
+        ]
+      : []),
   ];
 
   const closeMenu = () => setMenuOpen(false);
