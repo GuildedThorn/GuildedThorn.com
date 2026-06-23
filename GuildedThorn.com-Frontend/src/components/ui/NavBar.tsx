@@ -119,13 +119,19 @@ function Dropdown({
         />
       </button>
       {open && (
+        // Anchored at top-full (no dead gap) with a transparent pt-1 bridge so
+        // moving the cursor from the trigger to an item stays inside the
+        // element — otherwise crossing a margin gap fires onMouseLeave and the
+        // menu closes before you can click.
         <div
           className={cn(
-            "absolute z-50 mt-1 min-w-[12rem] rounded-xl border border-border bg-card p-1 shadow-lg",
+            "absolute top-full z-50 pt-1",
             align === "right" ? "right-0" : "left-0",
           )}
         >
-          {children(() => setOpen(false))}
+          <div className="min-w-[12rem] rounded-xl border border-border bg-card p-1 shadow-lg">
+            {children(() => setOpen(false))}
+          </div>
         </div>
       )}
     </div>
