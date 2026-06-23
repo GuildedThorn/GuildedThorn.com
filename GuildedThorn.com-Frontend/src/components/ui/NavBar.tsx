@@ -203,7 +203,7 @@ export default function NavBar() {
   );
 
   return (
-    <div className="sticky top-0 z-40 px-3 pt-3">
+    <div className="sticky top-0 z-50 px-3 pt-3">
       <nav className="mx-auto max-w-7xl rounded-2xl border border-border bg-card/80 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/70">
         <div className="flex h-16 items-center justify-between gap-2 px-4 sm:px-6">
           {/* Brand */}
