@@ -64,4 +64,8 @@ public class MongoDbService {
     public IMongoCollection<DonationSettings> GetDonationSettingsCollection() {
         return _database.GetCollection<DonationSettings>("DonationSettings");
     }
+
+    public IMongoCollection<UserStats> GetUserStatsCollection() {
+        return _database.GetCollection<UserStats>("UserStats");
+    }
 }

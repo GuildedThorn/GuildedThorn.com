@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using GuildedThorn.com.Models;
 using GuildedThorn.com.Services;
@@ -143,5 +144,70 @@ public class UserController(MongoDbService mongoDbService) : ControllerBase {
         await mongoDbService.GetUserCollection().ReplaceOneAsync(u => u.Id == user.Id, user);
 
         return Ok(new { avatarUrl = user.AvatarUrl });
+    }
+
+    public record WatchtimeRequest(string Activity, int Seconds);
+
+    // Heartbeat from the radio/stream players: accumulates per-user watchtime.
+    // Seconds is clamped so a single call can't inflate the stat. Username is the
+    // UserStats _id, so the upsert filter sets it on insert.
+    [Authorize(Policy = "PrivilegedOnly")]
+    [HttpPost("watchtime")]
+    public async Task<IActionResult> Watchtime([FromBody] WatchtimeRequest req) {
+        var username = User.FindFirst("name")?.Value;
+        if (string.IsNullOrEmpty(username)) {
+            return Unauthorized("Username is missing from the token.");
+        }
+
+        var seconds = Math.Clamp(req.Seconds, 1, 120);
+        var update = req.Activity?.ToLowerInvariant() switch {
+            "radio" => Builders<UserStats>.Update.Inc(s => s.RadioSeconds, seconds),
+            "stream" => Builders<UserStats>.Update.Inc(s => s.StreamSeconds, seconds),
+            _ => null,
+        };
+        if (update is null) {
+            return BadRequest("Unknown activity.");
+        }
+
+        await mongoDbService.GetUserStatsCollection().UpdateOneAsync(
+            s => s.Username == username, update, new UpdateOptions { IsUpsert = true });
+        return NoContent();
+    }
+
+    // Public profile. Exposes only safe fields + supporter total/since + watchtime;
+    // never email/real name, and no per-donation detail (privacy).
+    [AllowAnonymous]
+    [HttpGet("profile/{username}")]
+    public async Task<IActionResult> GetProfile(string username) {
+        var user = await mongoDbService.GetUserCollection()
+            .Find(u => u.Username == username)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound(new { message = "User not found" });
+        }
+
+        var donations = await mongoDbService.GetDonationCollection()
+            .Find(d => d.UserName == username)
+            .ToListAsync();
+        var totalCents = donations.Sum(d => d.AmountCents);
+        var supporterSince = donations.Count > 0
+            ? donations.Min(d => d.CreatedAt)
+            : (DateTime?)null;
+
+        var stats = await mongoDbService.GetUserStatsCollection()
+            .Find(s => s.Username == username)
+            .FirstOrDefaultAsync();
+
+        return Ok(new {
+            username = user.Username,
+            role = user.Role,
+            avatarUrl = user.AvatarUrl,
+            createdAt = user.CreatedAt,
+            totalDonatedCents = totalCents,
+            donationCount = donations.Count,
+            supporterSince,
+            radioSeconds = stats?.RadioSeconds ?? 0,
+            streamSeconds = stats?.StreamSeconds ?? 0,
+        });
     }
 }

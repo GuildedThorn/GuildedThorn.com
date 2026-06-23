@@ -411,3 +411,43 @@ export async function setDonationsPublished(published: boolean): Promise<void> {
 	});
 	if (!res.ok) throw await asError(res, "Couldn’t update donation visibility.");
 }
+
+/* ───────────────────────── Profiles + watchtime ───────────────────────── */
+
+export interface UserProfile {
+	username: string;
+	role: string;
+	avatarUrl: string;
+	createdAt: string;
+	totalDonatedCents: number;
+	donationCount: number;
+	supporterSince: string | null;
+	radioSeconds: number;
+	streamSeconds: number;
+}
+
+// Returns null on 404 (no such user) so the page can render a not-found state.
+export async function getUserProfile(username: string): Promise<UserProfile | null> {
+	const res = await fetch(`/api/user/profile/${encodeURIComponent(username)}`);
+	if (res.status === 404) return null;
+	if (!res.ok) throw await asError(res, "Couldn’t load profile.");
+	return res.json();
+}
+
+// Fire-and-forget watchtime heartbeat. Errors are swallowed — it's a cosmetic stat
+// and must never disrupt playback.
+export async function sendWatchtimeHeartbeat(
+	activity: "radio" | "stream",
+	seconds: number,
+): Promise<void> {
+	try {
+		await fetch("/api/user/watchtime", {
+			method: "POST",
+			credentials: "include",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ activity, seconds }),
+		});
+	} catch {
+		/* ignore — best effort */
+	}
+}

@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Trash2, Ban } from "lucide-react";
 import { Textarea } from "@components/ui/TextArea";
 import { Button } from "@components/ui/Button";
@@ -187,7 +188,12 @@ export default function GuestBook() {
                             <Avatar src={msg.avatarUrl} name={msg.username} className="h-10 w-10 text-sm" />
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-baseline justify-between gap-2">
-                                    <span className="truncate font-semibold">{msg.username}</span>
+                                    <Link
+                                        to={`/u/${msg.username}`}
+                                        className="truncate font-semibold hover:text-primary hover:underline"
+                                    >
+                                        {msg.username}
+                                    </Link>
                                     {msg.createdAt && (
                                         <time
                                             dateTime={msg.createdAt}

@@ -8,6 +8,7 @@ import {
     type ReactNode,
 } from "react";
 import { type HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
+import { useWatchtime } from "@lib/useWatchtime";
 
 // Relative URLs: proxied in dev, same origin in prod.
 const STREAM_URL = "/api/radio/stream";
@@ -188,6 +189,10 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
             ms.playbackState = "paused";
         }
     }, [playing, title, artist]);
+
+    // Credit listening time to the logged-in user while actually playing (works
+    // site-wide and across routes since this provider lives above the router).
+    useWatchtime("radio", playing);
 
     const toggle = useCallback(() => setPlaying((p) => !p), []);
     const play = useCallback(() => setPlaying(true), []);

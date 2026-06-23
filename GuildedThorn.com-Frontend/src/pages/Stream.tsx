@@ -2,10 +2,15 @@ import { Users } from "lucide-react";
 import StreamPlayer from "@components/StreamPlayer";
 import ChatPanel from "@components/ChatPanel";
 import { useStreamStatus } from "@lib/useStreamStatus";
+import { useWatchtime } from "@lib/useWatchtime";
 import { cn } from "@lib/utils";
 
 const Stream = () => {
 	const { online, viewers, title } = useStreamStatus();
+
+	// Credit stream watchtime to the logged-in viewer while the broadcast is live
+	// and they're on this page (the player autoplays when online).
+	useWatchtime("stream", online === true);
 
 	return (
 		<div className="page">

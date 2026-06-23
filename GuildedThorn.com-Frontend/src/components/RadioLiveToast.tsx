@@ -84,13 +84,22 @@ function RadioLiveToast() {
         // avatar); guests show the name they typed (or "Someone").
         connection.on("Donation", (d: DonationEvent) => {
             const amount = formatMoney(d.amountCents, d.currency);
-            const who = d.userName
-                ? `@${d.userName}`
-                : d.displayName?.trim() || "Someone";
+            // Logged-in donors get a profile link; guests show plain text.
+            const who = d.userName ? (
+                <Link
+                    to={`/u/${d.userName}`}
+                    className="font-semibold text-primary hover:underline"
+                    onClick={() => setToast(null)}
+                >
+                    @{d.userName}
+                </Link>
+            ) : (
+                <span className="font-semibold">{d.displayName?.trim() || "Someone"}</span>
+            );
             setToast({
                 title: (
                     <>
-                        <span className="font-semibold">{who}</span> donated {amount} 💛
+                        {who} donated {amount} 💛
                     </>
                 ),
                 cta: "Support the stream →",

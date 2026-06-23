@@ -360,6 +360,7 @@ var spaRoutes = new[] {
     "/gallery/images",
     "/gallery/images/{id}",
     "/settings",
+    "/u/{username}",
     "/inbox",
     "/guestbook",
     "/radio",

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { type HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { Ban, Crown, Shield, ShieldAlert, Trash2 } from "lucide-react";
 import { Avatar } from "@components/ui/Avatar";
@@ -158,7 +159,12 @@ export default function ChatPanel() {
                             <Avatar src={m.avatarUrl} name={m.user} className="h-7 w-7 text-xs" />
                             <div className="min-w-0 flex-1">
                                 <div className="flex min-w-0 items-center gap-1.5">
-                                    <span className="min-w-0 truncate text-sm font-semibold">{m.user}</span>
+                                    <Link
+                                        to={`/u/${m.user}`}
+                                        className="min-w-0 truncate text-sm font-semibold hover:text-primary hover:underline"
+                                    >
+                                        {m.user}
+                                    </Link>
                                     {m.role === "owner" && (
                                         <Crown size={12} className="shrink-0 text-amber-500" aria-label="Owner" />
                                     )}
