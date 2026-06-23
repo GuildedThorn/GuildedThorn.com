@@ -2,17 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { RefreshCw, Users, Video } from "lucide-react";
 
 // Self-hosted live video, replacing the old third-party stream embed. The backend reverse-
-// proxies an Owncast (or any RTMP→HLS media server) instance:
-//   /stream/status        → { online, viewers, title } — mirrors /api/radio/status
+// proxies an Owncast (RTMP→HLS media server) instance:
+//   /stream/status          → Owncast /api/status ({ online, viewerCount, streamTitle })
 //   /stream/hls/stream.m3u8 → the live HLS playlist
 // Everything is same-origin, so there's no third-party cookie/consent concern.
 const HLS_URL = "/stream/hls/stream.m3u8";
 const STATUS_URL = "/stream/status";
 
+// Field names match Owncast's /api/status response (proxied verbatim).
 interface StreamStatus {
 	online: boolean;
-	viewers?: number;
-	title?: string;
+	viewerCount?: number;
+	streamTitle?: string;
 }
 
 function StreamPlayer() {
@@ -34,8 +35,8 @@ function StreamPlayer() {
 				const data = (await res.json()) as StreamStatus;
 				if (!active) return;
 				setOnline(data.online);
-				if (typeof data.viewers === "number") setViewers(data.viewers);
-				if (data.online && data.title) setTitle(data.title);
+				if (typeof data.viewerCount === "number") setViewers(data.viewerCount);
+				if (data.online && data.streamTitle) setTitle(data.streamTitle);
 			} catch {
 				if (active) setOnline(false);
 			}
