@@ -1,18 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
-import { Radio as RadioIcon, X } from "lucide-react";
+import { Radio as RadioIcon, Heart, X } from "lucide-react";
+import { Avatar } from "@components/ui/Avatar";
 
 interface Toast {
-    title: string;
+    title: ReactNode;
     cta: string;
+    to: string;
     pulse: boolean;
+    icon: ReactNode;
 }
 
-// Site-wide listener for the anonymous RadioHub. When the station goes live —
-// or a new stream is scheduled — the server broadcasts an event and we surface
-// an in-app toast to whoever is currently browsing (off-site people get the Web
-// Push instead).
+interface DonationEvent {
+    userName?: string | null;
+    displayName?: string | null;
+    amountCents: number;
+    currency: string;
+    avatarUrl?: string | null;
+}
+
+function formatMoney(cents: number, currency: string) {
+    return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: (currency || "usd").toUpperCase(),
+        maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
+    }).format(cents / 100);
+}
+
+// Site-wide listener for the anonymous RadioHub — the shared bus for instant
+// in-app toasts (radio going live, a new stream scheduled, a new donation).
+// Off-site people get Web Push instead.
 function RadioLiveToast() {
     const [toast, setToast] = useState<Toast | null>(null);
 
@@ -34,7 +52,17 @@ function RadioLiveToast() {
         connection.on("ListenerCount", () => {});
 
         connection.on("RadioLive", (info: { name?: string }) => {
-            setToast({ title: `${info?.name || "GuildedThorn Radio"} is live`, cta: "Tune in now →", pulse: true });
+            setToast({
+                title: `${info?.name || "GuildedThorn Radio"} is live`,
+                cta: "Tune in now →",
+                to: "/radio",
+                pulse: true,
+                icon: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <RadioIcon size={18} className="animate-pulse" />
+                    </span>
+                ),
+            });
         });
 
         connection.on("StreamScheduled", (info: { title?: string; date?: string; time?: string }) => {
@@ -42,7 +70,43 @@ function RadioLiveToast() {
             setToast({
                 title: `New stream scheduled: ${info?.title ?? "Untitled"}${when ? ` (${when})` : ""}`,
                 cta: "View schedule →",
+                to: "/radio",
                 pulse: false,
+                icon: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <RadioIcon size={18} />
+                    </span>
+                ),
+            });
+        });
+
+        // New donation. Logged-in donors get the @account reward (username +
+        // avatar); guests show the name they typed (or "Someone").
+        connection.on("Donation", (d: DonationEvent) => {
+            const amount = formatMoney(d.amountCents, d.currency);
+            const who = d.userName
+                ? `@${d.userName}`
+                : d.displayName?.trim() || "Someone";
+            setToast({
+                title: (
+                    <>
+                        <span className="font-semibold">{who}</span> donated {amount} 💛
+                    </>
+                ),
+                cta: "Support the stream →",
+                to: "/donate",
+                pulse: true,
+                icon: d.userName ? (
+                    <Avatar
+                        src={d.avatarUrl}
+                        name={d.displayName ?? d.userName}
+                        className="h-8 w-8 text-xs"
+                    />
+                ) : (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <Heart size={18} />
+                    </span>
+                ),
             });
         });
 
@@ -65,12 +129,10 @@ function RadioLiveToast() {
     return (
         <div className="fixed bottom-4 right-4 z-50 print:hidden">
             <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 shadow-lg">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <RadioIcon size={18} className={toast.pulse ? "animate-pulse" : undefined} />
-                </span>
+                {toast.icon}
                 <div className="text-left">
-                    <p className="text-sm font-semibold">{toast.title}</p>
-                    <Link to="/radio" className="text-xs text-primary hover:underline" onClick={() => setToast(null)}>
+                    <p className="text-sm">{toast.title}</p>
+                    <Link to={toast.to} className="text-xs text-primary hover:underline" onClick={() => setToast(null)}>
                         {toast.cta}
                     </Link>
                 </div>

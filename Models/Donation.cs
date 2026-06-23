@@ -20,7 +20,12 @@ public class Donation {
 
     public string Currency { get; set; } = "usd";
 
+    // The free-text display name a guest typed (optional).
     public string? DonorName { get; set; }
+
+    // The logged-in account this donation is credited to (null for guests).
+    // Captured server-side from the JWT — this is what gets @-mentioned on-site.
+    public string? UserName { get; set; }
 
     public string? Message { get; set; }
 

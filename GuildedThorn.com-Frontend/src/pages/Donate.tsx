@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Heart, Check, X, HandCoins } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Heart, Check, X, HandCoins, LogIn, BadgeCheck } from "lucide-react";
 import { Button } from "@components/ui/Button";
 import TextInput from "@components/ui/TextInput";
 import { Textarea } from "@components/ui/TextArea";
+import { useAuth } from "@components/AuthContext";
 import { cn } from "@lib/utils";
 import {
 	getDonationConfig,
@@ -15,6 +16,7 @@ import Seo from "@components/Seo";
 const CUSTOM = "custom" as const;
 
 function Donate() {
+	const { isAuthenticated, user } = useAuth();
 	const [config, setConfig] = useState<DonationConfig | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [params] = useSearchParams();
@@ -137,6 +139,32 @@ function Donate() {
 					</div>
 				) : (
 					<form onSubmit={onSubmit} className="panel p-6 text-left sm:p-8">
+						{/* Reward gating: logged-in donors get the on-site @mention
+						    shoutout; guests can still donate, just without it. */}
+						{isAuthenticated ? (
+							<div className="mb-5 flex items-center gap-2.5 rounded-lg border border-success/40 bg-success/5 px-3 py-2.5 text-sm">
+								<BadgeCheck className="h-4 w-4 shrink-0 text-success" />
+								<span>
+									Donating as{" "}
+									<span className="font-semibold text-primary">
+										@{user?.name}
+									</span>{" "}
+									— you'll be credited in the live shoutout.
+								</span>
+							</div>
+						) : (
+							<div className="mb-5 flex items-center gap-2.5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm">
+								<LogIn className="h-4 w-4 shrink-0 text-muted-foreground" />
+								<span className="text-muted-foreground">
+									<Link to="/login" className="font-medium text-primary hover:underline">
+										Log in
+									</Link>{" "}
+									to be credited and unlock on-site rewards — or donate as a
+									guest below.
+								</span>
+							</div>
+						)}
+
 						<label className="field-label">Choose an amount</label>
 						<div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
 							{config.presets.map((cents) => (
@@ -177,13 +205,17 @@ function Donate() {
 							/>
 						)}
 
-						<TextInput
-							id="donor-name"
-							label="Name (optional)"
-							placeholder="Anonymous"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-						/>
+						{/* Guests pick a display name; logged-in donors are credited by
+						    their account, so the free-text name is hidden. */}
+						{!isAuthenticated && (
+							<TextInput
+								id="donor-name"
+								label="Name (optional)"
+								placeholder="Anonymous"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+							/>
+						)}
 
 						<div className="mb-4 text-left">
 							<label htmlFor="donor-message" className="field-label">

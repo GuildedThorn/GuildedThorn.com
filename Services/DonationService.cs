@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GuildedThorn.com.Models;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -22,6 +23,7 @@ namespace GuildedThorn.com.Services;
 public class DonationService {
 
     private readonly MongoDbService _mongo;
+    private readonly IHubContext<RadioHub> _hub;
     private readonly ILogger<DonationService> _logger;
     private readonly string _secretKey;
     private readonly string _webhookSecret;
@@ -37,9 +39,11 @@ public class DonationService {
 
     public DonationService(
         MongoDbService mongo,
+        IHubContext<RadioHub> hub,
         IConfiguration config,
         ILogger<DonationService> logger) {
         _mongo = mongo;
+        _hub = hub;
         _logger = logger;
 
         _secretKey = config["Stripe:SecretKey"] ?? "";
@@ -96,10 +100,13 @@ public class DonationService {
     // Creates a hosted Checkout Session and returns its URL. Donor name/message
     // ride in metadata so the webhook can persist them without trusting the client.
     public async Task<string> CreateCheckoutSessionAsync(
-        long amountCents, string? donorName, string? message, string origin) {
+        long amountCents, string? donorName, string? message, string origin, string? userName) {
         var metadata = new Dictionary<string, string>();
         if (!string.IsNullOrWhiteSpace(donorName)) metadata["donorName"] = donorName.Trim();
         if (!string.IsNullOrWhiteSpace(message)) metadata["message"] = message.Trim();
+        // The logged-in account (trusted, from the JWT) — drives the on-site
+        // @mention reward. Absent for guest donations.
+        if (!string.IsNullOrWhiteSpace(userName)) metadata["userName"] = userName.Trim();
 
         var options = new SessionCreateOptions {
             Mode = "payment",
@@ -158,11 +165,13 @@ public class DonationService {
         if (already) return;
 
         session.Metadata ??= new Dictionary<string, string>();
+        var userName = session.Metadata.GetValueOrDefault("userName");
         var donation = new Donation {
             StripeSessionId = session.Id,
             AmountCents = session.AmountTotal ?? 0,
             Currency = session.Currency ?? Currency,
             DonorName = session.Metadata.GetValueOrDefault("donorName"),
+            UserName = userName,
             Message = session.Metadata.GetValueOrDefault("message"),
             Status = "completed",
             CreatedAt = DateTime.UtcNow,
@@ -171,5 +180,37 @@ public class DonationService {
         _logger.LogInformation(
             "Recorded donation {Amount} {Currency} (session {Session})",
             donation.AmountCents, donation.Currency, session.Id);
+
+        await BroadcastDonationAsync(donation);
+    }
+
+    // Fans a "Donation" toast out to every visitor on the site (over the same
+    // anonymous hub the radio-live toast uses). Logged-in donors get the
+    // @account reward: their username + avatar; guests show their typed name.
+    private async Task BroadcastDonationAsync(Donation donation) {
+        string? avatarUrl = null;
+        if (!string.IsNullOrEmpty(donation.UserName)) {
+            var user = await _mongo.GetUserCollection()
+                .Find(u => u.Username == donation.UserName)
+                .FirstOrDefaultAsync();
+            avatarUrl = user?.AvatarUrl;
+        }
+
+        var displayName = donation.UserName
+            ?? (string.IsNullOrWhiteSpace(donation.DonorName) ? "Someone" : donation.DonorName);
+
+        try {
+            await _hub.Clients.All.SendAsync("Donation", new {
+                userName = donation.UserName,     // null for guests → no @mention/link
+                displayName,
+                amountCents = donation.AmountCents,
+                currency = donation.Currency,
+                avatarUrl,
+            });
+        } catch (Exception ex) {
+            // The toast is cosmetic — never let it fail the webhook (Stripe would
+            // retry and we'd double-broadcast).
+            _logger.LogWarning(ex, "Failed to broadcast Donation over SignalR");
+        }
     }
 }

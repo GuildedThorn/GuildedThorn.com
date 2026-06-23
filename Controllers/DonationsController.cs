@@ -54,8 +54,12 @@ public class DonationsController(DonationService donations) : ControllerBase {
         if (req.AmountCents < MinCents || req.AmountCents > MaxCents)
             return BadRequest(new { message = "Please choose an amount between $1 and $10,000." });
 
+        // Credit the donation to the logged-in account (trusted, from the JWT —
+        // never the client body). Guests donate without an account link.
+        var userName = User.Identity?.IsAuthenticated == true ? User.Identity.Name : null;
+
         var origin = $"{Request.Scheme}://{Request.Host}";
-        var url = await donations.CreateCheckoutSessionAsync(req.AmountCents, req.Name, req.Message, origin);
+        var url = await donations.CreateCheckoutSessionAsync(req.AmountCents, req.Name, req.Message, origin, userName);
         return Ok(new { url });
     }
 
