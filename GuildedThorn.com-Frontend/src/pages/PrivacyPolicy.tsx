@@ -63,9 +63,6 @@ export default function PrivacyPolicy() {
                 </p>
                 <ul>
                     <li>
-                        <strong>Twitch</strong> — the stream embed (loaded only with your consent).
-                    </li>
-                    <li>
                         <strong>stats.fm</strong> — to display top artists, and <strong>Spotify</strong>{" "}
                         (image CDN) for artist artwork.
                     </li>

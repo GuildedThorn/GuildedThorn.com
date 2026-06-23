@@ -40,7 +40,7 @@ export default function CookieConsent() {
                                 <p className="font-medium text-foreground">We value your privacy</p>
                                 <p className="mt-1">
                                     We use strictly necessary cookies to keep you signed in. With your
-                                    consent we also load third-party content (like the Twitch stream),
+                                    consent we also load third-party content (such as embedded widgets),
                                     which may set its own cookies. See our{" "}
                                     <Link to="/cookies" className="text-primary hover:underline">
                                         Cookie Policy
@@ -102,8 +102,8 @@ export default function CookieConsent() {
                                 <div>
                                     <p className="font-medium">Third-party content</p>
                                     <p className="mt-0.5 text-sm text-muted-foreground">
-                                        Loads embeds like the Twitch stream, which may set their own
-                                        cookies.
+                                        Loads third-party embeds (such as donation widgets), which may
+                                        set their own cookies.
                                     </p>
                                 </div>
                                 <input

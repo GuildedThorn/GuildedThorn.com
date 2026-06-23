@@ -5,7 +5,7 @@ const STORAGE_KEY = "gt-cookie-consent-v1";
 export interface ConsentCategories {
     /** Sign-in / security. Always on, can't be disabled. */
     necessary: true;
-    /** Third-party embeds (e.g. the Twitch stream) that may set their own cookies. */
+    /** Third-party embeds (e.g. donation widgets) that may set their own cookies. */
     functional: boolean;
 }
 

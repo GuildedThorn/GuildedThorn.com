@@ -111,7 +111,7 @@ const projects = [
       "JWT cookie auth with owner/user roles, MongoDB persistence, and RabbitMQ messaging.",
       "Real-time chat and a live radio player over SignalR + Icecast.",
       "Markdown blog with tag filtering and an RSS feed; image gallery with EXIF metadata, bulk/folder upload, and tag search.",
-      "Integrations: Spotify / stats.fm, GitHub, Discord (Lanyard), Twitch; cookie-consent CMP.",
+      "Integrations: Spotify / stats.fm, GitHub, Discord (Lanyard); cookie-consent CMP.",
       "Dockerized with reproducible builds and deployment via Nix flakes.",
     ],
   },

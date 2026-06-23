@@ -20,6 +20,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
+using Yarp.ReverseProxy.Configuration;
+using Yarp.ReverseProxy.Transforms;
 
 // ---------- Load env first ----------
 // Optional: container / CI / flake deploys supply real environment variables
@@ -71,6 +73,37 @@ services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 services.AddHealthChecks();
+
+// ---- Live-stream reverse proxy ----
+// Forwards same-origin /stream/* to the local Owncast media server so the live
+// HLS video rides the existing Cloudflare tunnel (no extra hostname, no third-
+// party cookies). RTMP ingest is separate — OBS pushes to Owncast on the LAN.
+//   /stream/status            → Owncast /api/status   ({ online, viewers, title })
+//   /stream/hls/{**rest}      → Owncast /hls/{**rest} (m3u8 playlist + segments)
+// Owncast must not collide with the app's own port (8080 in prod), so default
+// to 8090; override with Stream:OwncastUrl if the media server moves.
+var owncastUrl = configuration["Stream:OwncastUrl"] ?? "http://127.0.0.1:8090";
+services.AddReverseProxy().LoadFromMemory(
+    [
+        new RouteConfig {
+            RouteId = "stream-status",
+            ClusterId = "owncast",
+            Match = new RouteMatch { Path = "/stream/status" },
+        }.WithTransformPathSet("/api/status"),
+        new RouteConfig {
+            RouteId = "stream-hls",
+            ClusterId = "owncast",
+            Match = new RouteMatch { Path = "/stream/hls/{**remainder}" },
+        }.WithTransformPathRemovePrefix("/stream/hls").WithTransformPathPrefix("/hls"),
+    ],
+    [
+        new ClusterConfig {
+            ClusterId = "owncast",
+            Destinations = new Dictionary<string, DestinationConfig> {
+                ["owncast"] = new() { Address = owncastUrl },
+            },
+        },
+    ]);
 
 // ---- JWT signing key ----
 var keyBytes = Convert.FromBase64String(
@@ -236,11 +269,12 @@ app.Use(async (context, next) => {
         "base-uri 'self'; " +
         "object-src 'none'; " +
         "frame-ancestors 'none'; " +
-        "frame-src 'self' https://challenges.cloudflare.com https://embed.twitch.tv https://player.twitch.tv https://www.twitch.tv; " +
+        "frame-src 'self' https://challenges.cloudflare.com; " +
         "img-src 'self' data: https:; " +
         "font-src 'self' data:; " +
+        "media-src 'self' blob:; " +             // radio <audio> (self) + hls.js MSE (blob:)
         "style-src 'self' 'unsafe-inline'; " +  // React sets inline styles (e.g. language colors)
-        "script-src 'self' https://challenges.cloudflare.com https://embed.twitch.tv https://static.cloudflareinsights.com; " +
+        "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; " +
         "connect-src 'self' https: wss:; " +     // /api, SignalR (wss), GitHub calendar
         "form-action 'self'; " +
         "upgrade-insecure-requests";
@@ -288,6 +322,9 @@ app.MapHub<ChatHub>("/chathub").RequireCors("AllowFrontend");
 app.MapHub<RadioHub>("/radiohub").RequireCors("AllowFrontend");
 app.MapControllers().RequireCors("AllowFrontend");
 app.MapHealthChecks("/health").AllowAnonymous();
+
+// Live-stream proxy (anonymous, same-origin) — matched before the SPA fallback.
+app.MapReverseProxy();
 
 app.MapGet("/404", context => ServeSpaIndex(context, StatusCodes.Status404NotFound));
 

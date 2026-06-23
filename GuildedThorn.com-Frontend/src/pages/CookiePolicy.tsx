@@ -17,12 +17,6 @@ const cookies = [
         purpose: "Remembers your cookie choices. Stored in your browser (localStorage).",
         duration: "Until cleared",
     },
-    {
-        name: "Twitch cookies",
-        type: "Third-party content",
-        purpose: "Set by the Twitch embed when you enable third-party content.",
-        duration: "Set by Twitch",
-    },
 ];
 
 export default function CookiePolicy() {
@@ -54,8 +48,8 @@ export default function CookiePolicy() {
                         switched off.
                     </li>
                     <li>
-                        <strong>Third-party content</strong> — optional. When enabled, embeds such as the
-                        Twitch stream may set their own cookies. These load only with your consent.
+                        <strong>Third-party content</strong> — optional. When enabled, third-party embeds
+                        may set their own cookies. These load only with your consent.
                     </li>
                 </ul>
                 <p>We do not use analytics, advertising, or cross-site tracking cookies.</p>

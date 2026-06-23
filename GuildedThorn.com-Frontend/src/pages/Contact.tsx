@@ -5,7 +5,6 @@ import {
 	FaDiscord,
 	FaXTwitter,
 	FaYoutube,
-	FaTwitch,
 	FaGithub,
 } from "react-icons/fa6";
 import { Button } from "@components/ui/Button";
@@ -45,13 +44,6 @@ const socials = [
 		href: "https://www.youtube.com/@GuildedThorn",
 		icon: <FaYoutube />,
 		color: "text-red-500",
-	},
-	{
-		label: "Twitch",
-		handle: "xGuildedThorn",
-		href: "https://www.twitch.tv/xGuildedThorn",
-		icon: <FaTwitch />,
-		color: "text-purple-400",
 	},
 	{
 		label: "GitHub",
