@@ -5,6 +5,11 @@ import RegexTester from "@pages/RegexTester.tsx";
 import LoremIpsumGenerator from "@pages/LoremIpsumGenerator.tsx";
 import ColorConverter from "@pages/ColorConverter.tsx";
 import UUIDGenerator from "@pages/UUIDGenerator.tsx";
+import QrCodeGenerator from "@pages/QrCodeGenerator.tsx";
+import BpmTapCounter from "@pages/BpmTapCounter.tsx";
+import CamelotWheel from "@pages/CamelotWheel.tsx";
+import BpmDelayCalculator from "@pages/BpmDelayCalculator.tsx";
+import FrequencyCalculator from "@pages/FrequencyCalculator.tsx";
 import Seo from "@components/Seo";
 
 export default function Tools() {
@@ -20,7 +25,7 @@ export default function Tools() {
         <div className="page">
             <Seo
                 title="Web Tools"
-                description="A small collection of developer utilities — color converter, regex tester, UUID generator, lorem ipsum, and a Pomodoro timer."
+                description="A small collection of utilities — QR generator, color converter, regex tester, UUID, BPM tools, a Camelot wheel for DJs, an antenna/RF calculator, and more."
                 path="/tools"
             />
             <h1 className="mb-2 text-3xl font-bold text-primary">Web Tools</h1>
@@ -40,6 +45,21 @@ export default function Tools() {
                 </section>
                 <section id="uuidgenerator" className="h-full">
                     <UUIDGenerator />
+                </section>
+                <section id="qrcode" className="h-full lg:col-span-2">
+                    <QrCodeGenerator />
+                </section>
+                <section id="bpmtap" className="h-full">
+                    <BpmTapCounter />
+                </section>
+                <section id="camelot" className="h-full">
+                    <CamelotWheel />
+                </section>
+                <section id="bpmdelay" className="h-full">
+                    <BpmDelayCalculator />
+                </section>
+                <section id="frequency" className="h-full">
+                    <FrequencyCalculator />
                 </section>
                 <section id="loremipsum" className="lg:col-span-2">
                     <LoremIpsumGenerator />
