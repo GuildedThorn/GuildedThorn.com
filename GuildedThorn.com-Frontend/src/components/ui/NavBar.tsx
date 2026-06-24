@@ -17,6 +17,7 @@ import {
   FaHeart,
   FaImages,
   FaScroll,
+  FaServer,
   FaStream,
   FaTools,
 } from "react-icons/fa";
@@ -50,6 +51,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { to: "/blog/pages", label: "Blog", icon: <FaScroll className="text-base" /> },
       { to: "/gallery/images/", label: "Gallery", icon: <FaImages className="text-base" /> },
       { to: "/net", label: "Network", icon: <PiNetwork className="text-base" /> },
+      { to: "/colophon", label: "How it's built", icon: <FaServer className="text-base" /> },
     ],
   },
   {

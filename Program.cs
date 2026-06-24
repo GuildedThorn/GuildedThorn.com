@@ -355,6 +355,7 @@ var spaRoutes = new[] {
     "/resume",
     "/projects",
     "/uses",
+    "/colophon",
     "/blog/pages",
     "/blog/pages/{id}",
     "/gallery/images",

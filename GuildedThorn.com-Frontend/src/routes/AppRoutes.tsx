@@ -20,6 +20,7 @@ import App from '@pages/App.tsx';
 const Stream = lazy(() => import('@pages/Stream.tsx'));
 const Donate = lazy(() => import('@pages/Donate.tsx'));
 const Profile = lazy(() => import('@pages/Profile.tsx'));
+const Colophon = lazy(() => import('@pages/Colophon.tsx'));
 const Contact = lazy(() => import('@pages/Contact.tsx'));
 const Radio = lazy(() => import('@pages/Radio.tsx'));
 const Login = lazy(() => import('@pages/Login.tsx'));
@@ -76,6 +77,7 @@ export const router = createBrowserRouter(
             <Route path="resume" element={<Resume />} />
             <Route path="projects" element={<Projects />} />
             <Route path="uses" element={<Uses />} />
+            <Route path="colophon" element={<Colophon />} />
 
             {/* Blog & gallery are public to read; upload/edit stay owner-only below */}
             <Route path="blog/pages" element={<BlogLayout />}>
