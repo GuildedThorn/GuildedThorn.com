@@ -117,6 +117,11 @@
             # never deletes, so uploaded gallery images survive redeploys.
             preStart = ''
               mkdir -p "$STATE_DIRECTORY/wwwroot/images/gallery" "$STATE_DIRECTORY/Resources"
+              # Drop stale top-level build files (e.g. a sitemap.xml that's since
+              # moved to a controller) so they can't shadow app routes. Only the
+              # top level — subdirectories are left alone so uploaded avatars
+              # (images/avatars) survive redeploys.
+              find "$STATE_DIRECTORY/wwwroot" -maxdepth 1 -type f -delete
               cp -r --no-preserve=mode,ownership ${appDir}/wwwroot/. "$STATE_DIRECTORY/wwwroot/"
               if [ ! -e "$STATE_DIRECTORY/Resources/config.json" ]; then
                 cp --no-preserve=mode,ownership ${appDir}/Resources/config.json "$STATE_DIRECTORY/Resources/"
