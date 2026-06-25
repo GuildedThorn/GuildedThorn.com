@@ -23,6 +23,14 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // eslint-plugin-react-hooks 7 added React Compiler "readiness" rules to
+      // its recommended config. They flag legitimate existing patterns (syncing
+      // state in effects, etc.) rather than correctness bugs, so keep them as
+      // warnings instead of failing the build. Revisit when adopting the
+      // React Compiler.
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/use-memo': 'warn',
     },
   },
 )

@@ -1,4 +1,7 @@
-import { Mail, Github, Globe, Printer } from "lucide-react";
+import { Mail, Globe, Printer } from "lucide-react";
+// lucide-react v1 dropped brand icons; use react-icons' Feather GitHub mark
+// (same visual family as lucide).
+import { FiGithub } from "react-icons/fi";
 import { Button } from "@components/ui/Button";
 import Seo from "@components/Seo";
 
@@ -9,7 +12,7 @@ const contacts = [
     href: "mailto:jamieduddleston2@gmail.com",
   },
   {
-    icon: <Github className="h-4 w-4" />,
+    icon: <FiGithub className="h-4 w-4" />,
     label: "github.com/GuildedThorn",
     href: "https://github.com/GuildedThorn",
   },

@@ -5,16 +5,17 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "baseUrl": "./src",
+    // baseUrl is deprecated in TS 6 (removed in 7); paths resolve relative to
+    // this tsconfig's directory, so anchor them at ./src explicitly.
     "paths": {
-      "@components/*": ["./components/*"],
-      "@routes/*": ["./routes/*"],
-      "@styles/*": ["./styles/*"],
-      "@assets/*": ["./assets/*"],
-      "@backend/*": ["./backend/*"],
-      "@pages/*": ["./pages/*"],
-      "@layouts/*": ["./layouts/*"],
-      "@lib/*": ["./lib/*"],
+      "@components/*": ["./src/components/*"],
+      "@routes/*": ["./src/routes/*"],
+      "@styles/*": ["./src/styles/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@backend/*": ["./src/backend/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@layouts/*": ["./src/layouts/*"],
+      "@lib/*": ["./src/lib/*"],
     }
   }
 }
