@@ -55,7 +55,7 @@
     "@types/react-is": "^19.2.0",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.0.3",
-    "eslint": "^9.39.4",
+    "eslint": "^10.5.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^16.5.0",
