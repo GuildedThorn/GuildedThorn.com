@@ -1,0 +1,95 @@
+name: Nix hash sync
+
+# Dependabot (and any lockfile change) rewrites package-lock.json / the
+# .csproj, which silently invalidates the pinned npmDepsHash + deps.json in
+# flake.nix — the flake-native prod build then fails. This job regenerates
+# those hashes on main and commits the fix automatically.
+#
+# Runs post-merge on main (writable token; avoids the read-only Dependabot PR
+# token and the pull_request_target code-execution risk). It is idempotent and
+# tags its own commit with [skip ci], so it cannot loop.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "GuildedThorn.com-Frontend/package-lock.json"
+      - "GuildedThorn.com.csproj"
+      - "deps.json"
+      - "flake.nix"
+  workflow_dispatch:
+
+concurrency:
+  group: nix-hash-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Hoisted to job level so it's readable from step `if:` conditions
+    # (the `secrets` context is not available directly in `if:`).
+    env:
+      GPG_KEY: ${{ secrets.NIX_BOT_GPG_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history + a token that can push the follow-up commit.
+          fetch-depth: 0
+
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Regenerate npmDepsHash
+        run: |
+          NEW=$(nix run nixpkgs#prefetch-npm-deps -- GuildedThorn.com-Frontend/package-lock.json)
+          echo "Computed npmDepsHash: $NEW"
+          sed -i "s|npmDepsHash = \"sha256-[^\"]*\"|npmDepsHash = \"$NEW\"|" flake.nix
+
+      - name: Regenerate deps.json (NuGet lockfile)
+        run: |
+          nix build .#default.passthru.fetch-deps -o fetch-deps
+          ./fetch-deps deps.json
+          rm -f fetch-deps
+
+      - name: Verify the flake still builds
+        run: nix build .#default
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- flake.nix deps.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Hashes already in sync — nothing to commit."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Optional: sign the bot commit if a GPG key is provided as a secret.
+      # Needed only if `main` enforces signed commits. Add repo secrets
+      # NIX_BOT_GPG_KEY (ASCII-armored private key) and NIX_BOT_GPG_PASSPHRASE.
+      - name: Import GPG key
+        id: gpg
+        if: steps.diff.outputs.changed == 'true' && env.GPG_KEY != ''
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.NIX_BOT_GPG_KEY }}
+          passphrase: ${{ secrets.NIX_BOT_GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Commit & push the hash fix
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          if [ -n "${{ steps.gpg.outputs.email }}" ]; then
+            git config user.name  "${{ steps.gpg.outputs.name }}"
+            git config user.email "${{ steps.gpg.outputs.email }}"
+          else
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          fi
+          git add flake.nix deps.json
+          git commit -m "chore(nix): sync npmDepsHash + deps.json after lockfile change [skip ci]"
+          git push origin HEAD:main
