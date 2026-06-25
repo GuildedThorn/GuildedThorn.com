@@ -199,10 +199,10 @@ services.AddHostedService<RadioSourceListener>(); // Mixxx → backend source se
 // ---- Forwarded headers (real client IP/scheme behind a reverse proxy) ----
 // So rate limiting keys on the true client IP and logs/redirects use the right
 // scheme. Assumes the app is only reachable through the proxy; if the app is
-// directly exposed, set KnownProxies/KnownNetworks instead of clearing them.
+// directly exposed, set KnownProxies/KnownIPNetworks instead of clearing them.
 services.Configure<ForwardedHeadersOptions>(options => {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 

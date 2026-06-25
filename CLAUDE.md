@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Personal portfolio website with an ASP.NET Core 9 backend and a React + TypeScript + Vite frontend. The backend serves the compiled frontend as static files from `wwwroot/`.
+Personal portfolio website with an ASP.NET Core 10 backend and a React + TypeScript + Vite frontend. The backend serves the compiled frontend as static files from `wwwroot/`.
 
 ## Commands
 
@@ -35,7 +35,7 @@ nix develop   # Provides dotnet SDK 9, bun, nodejs_24, git, nuget
 
 ## Architecture
 
-### Backend (ASP.NET Core 9)
+### Backend (ASP.NET Core 10)
 
 **Entry point**: `Program.cs` — loads `.env` via DotNetEnv, merges `Resources/config.json`, sets up all services and middleware.
 

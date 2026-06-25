@@ -44,8 +44,8 @@
           #   ./fetch-deps deps.json
           nugetDeps = ./deps.json;
 
-          dotnet-sdk = pkgs.dotnetCorePackages.sdk_9_0_3xx;
-          dotnet-runtime = pkgs.dotnetCorePackages.aspnetcore_9_0;
+          dotnet-sdk = pkgs.dotnetCorePackages.sdk_10_0;
+          dotnet-runtime = pkgs.dotnetCorePackages.aspnetcore_10_0;
 
           # The frontend is built by Nix (see above), not by the csproj's
           # bun Exec target.
@@ -150,7 +150,7 @@
           name = "dotnet9-shell";
 
           buildInputs = [
-            pkgs.dotnetCorePackages.sdk_9_0_3xx
+            pkgs.dotnetCorePackages.sdk_10_0
             pkgs.git
             pkgs.nuget
             pkgs.bind
