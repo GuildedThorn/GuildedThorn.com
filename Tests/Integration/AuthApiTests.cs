@@ -73,12 +73,15 @@ public class AuthApiTests {
     }
 
     [SkippableFact]
-    public async Task Me_WithoutCookie_IsUnauthorized() {
+    public async Task Me_WithoutCookie_ReturnsNoContent() {
         Skip.IfNot(_fixture.DockerAvailable, "Docker is not available.");
         var client = NewClient();
 
+        // /api/user/me is unauthenticated-friendly: it returns 204 No Content for
+        // anonymous callers (no token) so the SPA can probe auth state on mount
+        // without logging a 401. See commit 684e385.
         var res = await client.GetAsync("/api/user/me");
-        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, res.StatusCode);
     }
 
     [SkippableFact]
