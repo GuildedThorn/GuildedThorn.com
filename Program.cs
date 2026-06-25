@@ -296,7 +296,7 @@ app.Use(async (context, next) => {
 // Cache-Control for static assets. Vite content-hashes everything under
 // /assets/ (JS, CSS, fonts), so those are safe to cache for a year as
 // immutable. index.html must always revalidate so a redeploy is picked up.
-// Everything else (images, theme-init.js, manifest) gets a week.
+// Everything else (images, manifest) gets a week.
 void SetStaticCache(StaticFileResponseContext ctx)
 {
     var resp = ctx.Context.Response;

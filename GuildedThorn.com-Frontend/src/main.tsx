@@ -9,6 +9,12 @@ import {AuthProvider} from "@components/AuthContext.tsx";
 import { ConsentProvider } from "@components/ConsentContext";
 import { RadioPlayerProvider } from "@components/RadioPlayerContext";
 import { PomodoroProvider } from "@components/PomodoroContext";
+import { applyTheme, getStoredTheme } from "@lib/theme";
+
+// Apply the saved theme as the bundle loads (replaces the old render-blocking
+// /theme-init.js). "system" is a no-op over the CSS default, so only forced
+// light/dark users could see a brief flash before this runs.
+applyTheme(getStoredTheme());
 
 // Register the service worker that delivers "going live" Web Push notifications.
 // Harmless if the browser doesn't support it; the opt-in UI gates the rest.
