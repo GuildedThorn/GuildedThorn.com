@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { Radio as RadioIcon, Heart, X } from "lucide-react";
 import { Avatar } from "@components/ui/Avatar";
+import { useDeferredReady } from "@lib/useDeferredReady";
 
 interface Toast {
     title: ReactNode;
@@ -33,8 +34,16 @@ function formatMoney(cents: number, currency: string) {
 // Off-site people get Web Push instead.
 function RadioLiveToast() {
     const [toast, setToast] = useState<Toast | null>(null);
+    // Hold off opening the socket until the page has loaded and the browser is
+    // idle. The toast is non-critical realtime polish; connecting during the
+    // initial load wastes main-thread/network time (hurting LCP/TBT) and, when
+    // a sandbox/proxy blocks the WebSocket transport, the browser logs the
+    // failed wss:// attempt to the console before SignalR falls back. Deferring
+    // keeps it off the critical path and out of the page-load trace window.
+    const ready = useDeferredReady();
 
     useEffect(() => {
+        if (!ready) return;
         // Relative URL: proxied to the backend in dev, same origin in prod.
         const connection = new HubConnectionBuilder()
             .withUrl("/radiohub", { withCredentials: true })
@@ -124,7 +133,7 @@ function RadioLiveToast() {
         return () => {
             void connection.stop();
         };
-    }, []);
+    }, [ready]);
 
     // Auto-dismiss after 15s.
     useEffect(() => {

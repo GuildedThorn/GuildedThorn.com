@@ -26,6 +26,20 @@
 
     <meta name="theme-color" content="#000080"/>
 
+    <!-- Preload the homepage portrait: it's the mobile LCP element, but a CSR
+         SPA can't discover it until the JS bundle parses and React renders.
+         Preloading lets the browser fetch it in parallel with the bundle so
+         LCP no longer waits on a render-then-fetch waterfall. -->
+    <link
+      rel="preload"
+      as="image"
+      href="/images/portrait-448.webp"
+      type="image/webp"
+      imagesrcset="/images/portrait-448.webp 448w, /images/portrait-896.webp 896w"
+      imagesizes="(max-width: 448px) 100vw, 448px"
+      fetchpriority="high"
+    />
+
     <!-- Apply the saved theme before first paint (external so the CSP can keep
          script-src 'self' instead of allowing 'unsafe-inline'). -->
     <script src="/theme-init.js"></script>

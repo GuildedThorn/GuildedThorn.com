@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Cookie, X } from "lucide-react";
 import { useConsent } from "@components/ConsentContext";
+import { useDeferredReady } from "@lib/useDeferredReady";
 import { Button } from "@components/ui/Button";
 
 /**
@@ -27,7 +28,13 @@ export default function CookieConsent() {
         if (settingsOpen) setFunctionalChoice(functional);
     }, [settingsOpen, functional]);
 
-    const showBanner = !decided && !settingsOpen;
+    // Hold the first-visit banner until the page has loaded and gone idle. It's
+    // a fixed, backdrop-blurred overlay — painting that blur during the initial
+    // render competes with above-the-fold paint and slows mobile LCP. It isn't
+    // the LCP element and doesn't shift layout, so deferring it costs nothing
+    // visible. (The modal, opened from the footer, is unaffected and immediate.)
+    const ready = useDeferredReady();
+    const showBanner = ready && !decided && !settingsOpen;
 
     return (
         <>
