@@ -59,7 +59,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^16.5.0",
-    "jsdom": "^25.0.1",
+    "jsdom": "^29.1.1",
     "playwright-core": "^1.61.1",
     "react-is": "^19.2.7",
     "rollup-plugin-visualizer": "^7.0.1",
