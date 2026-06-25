@@ -15,7 +15,7 @@ export default function QrCodeGenerator() {
     const [vc, setVc] = useState({ name: "", org: "", phone: "", email: "" });
     const wrap = useRef<HTMLDivElement>(null);
 
-    let value = "";
+    let value: string;
     if (mode === "text") {
         value = text;
     } else if (mode === "wifi") {
