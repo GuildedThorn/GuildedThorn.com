@@ -25,7 +25,7 @@
     <PackageReference Include="MongoDB.Bson" Version="3.9.0" />
     <PackageReference Include="MongoDB.Driver" Version="3.9.0" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="6.3.0" />
-    <PackageReference Include="OpenIddict.Client.AspNetCore" Version="6.3.0" />
+    <PackageReference Include="OpenIddict.Client.AspNetCore" Version="7.5.0" />
     <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
