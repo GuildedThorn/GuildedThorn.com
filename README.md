@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/GuildedThorn/GuildedThorn.com/actions/workflows/ci.yml/badge.svg)](https://github.com/GuildedThorn/GuildedThorn.com/actions/workflows/ci.yml)
 
-My personal portfolio and self-hosted platform — an **ASP.NET Core 9** backend serving a **React + TypeScript + Vite** single-page app. The backend exposes a JSON API (`/api/*`) and SignalR hubs, and serves the compiled frontend as static files from `wwwroot/`.
+My personal portfolio and self-hosted platform — an **ASP.NET Core 10** backend serving a **React + TypeScript + Vite** single-page app. The backend exposes a JSON API (`/api/*`) and SignalR hubs, and serves the compiled frontend as static files from `wwwroot/`.
 
 It's a portfolio, but also a playground: a markdown blog, an EXIF-aware photo gallery, live internet radio, real-time chat, a guestbook, developer tools, and hardware-key login all live in one app.
 
@@ -28,7 +28,7 @@ It's a portfolio, but also a playground: a markdown blog, an EXIF-aware photo ga
 | Layer        | Tech                                                                          |
 | ------------ | ----------------------------------------------------------------------------- |
 | Frontend     | React 19, TypeScript, Vite 6, Tailwind CSS 4, React Router 7                  |
-| Backend      | ASP.NET Core 9, JWT auth (HttpOnly cookie), WebAuthn (Fido2NetLib), SignalR   |
+| Backend      | ASP.NET Core 10, JWT auth (HttpOnly cookie), WebAuthn (Fido2NetLib), SignalR   |
 | Data / infra | MongoDB, RabbitMQ, Icecast, Grafana Loki (logging)                            |
 | Testing      | xUnit + Testcontainers (backend), Vitest + Testing Library (frontend)         |
 | Tooling      | Nix flake (dev shell + reproducible build), Bun, Docker, GitHub Actions CI    |

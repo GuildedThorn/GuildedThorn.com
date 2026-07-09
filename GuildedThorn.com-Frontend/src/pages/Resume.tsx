@@ -109,7 +109,7 @@ const projects = [
     link: "guildedthorn.com",
     href: "https://guildedthorn.com",
     blurb:
-      "Full-stack personal site & platform — ASP.NET Core 9 API + React / TypeScript / Vite SPA.",
+      "Full-stack personal site & platform — ASP.NET Core 10 API + React / TypeScript / Vite SPA.",
     points: [
       "JWT cookie auth with owner/user roles, MongoDB persistence, and RabbitMQ messaging.",
       "Real-time chat and a live radio player over SignalR + Icecast.",

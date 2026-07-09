@@ -62,10 +62,16 @@ const sections: Section[] = [
     title: "The app itself",
     blurb: "What this page is actually made of.",
     items: [
-      { name: "C# / ASP.NET Core 9", detail: "The backend and all the APIs." },
-      { name: "React + TypeScript + Vite", detail: "The interface you're using right now." },
+      { name: "C# / ASP.NET Core 10", detail: "The backend and all the APIs." },
+      {
+        name: "React + TypeScript + Vite",
+        detail: "The interface you're using right now.",
+      },
       { name: "Tailwind CSS", detail: "Styling and the light/dark themes." },
-      { name: "MongoDB", detail: "Stores posts, gallery, guestbook, donations, profiles." },
+      {
+        name: "MongoDB",
+        detail: "Stores posts, gallery, guestbook, donations, profiles.",
+      },
       { name: "RabbitMQ", detail: "A message queue for background jobs." },
     ],
   },
@@ -79,15 +85,22 @@ const sections: Section[] = [
         detail:
           "The whole server is defined in code, so it rebuilds identically every single time.",
       },
-      { name: "Proxmox VM", detail: "Runs on a machine in my own rack at home." },
+      {
+        name: "Proxmox VM",
+        detail: "Runs on a machine in my own rack at home.",
+      },
       {
         name: "Cloudflare Tunnel",
         detail: "Public access with zero ports open to the internet.",
       },
-      { name: "Grafana Loki", detail: "Centralised logs so I can see what's happening." },
+      {
+        name: "Grafana Loki",
+        detail: "Centralised logs so I can see what's happening.",
+      },
       {
         name: "One-command deploy",
-        detail: "A single script builds the whole site and ships it to the server.",
+        detail:
+          "A single script builds the whole site and ships it to the server.",
       },
     ],
   },
@@ -102,11 +115,13 @@ const sections: Section[] = [
       },
       {
         name: "Hardened sessions",
-        detail: "HttpOnly cookies, a strict content-security policy, HSTS, and rate limiting.",
+        detail:
+          "HttpOnly cookies, a strict content-security policy, HSTS, and rate limiting.",
       },
       {
         name: "Privacy-first",
-        detail: "Cookies are consent-gated, and donor amounts stay private on profiles.",
+        detail:
+          "Cookies are consent-gated, and donor amounts stay private on profiles.",
       },
       {
         name: "Payments done right",
@@ -119,10 +134,19 @@ const sections: Section[] = [
     title: "Odds & ends",
     blurb: "Things I built simply because they're fun.",
     items: [
-      { name: "Developer tools", detail: "Regex tester, UUID + lorem generators, colour converter…" },
+      {
+        name: "Developer tools",
+        detail: "Regex tester, UUID + lorem generators, colour converter…",
+      },
       { name: "Guestbook", detail: "Old-school — feel free to sign it." },
-      { name: "Profiles & watchtime", detail: "Your radio/stream time, tracked on your own profile." },
-      { name: "Network graph", detail: "An interactive map of how all of this connects." },
+      {
+        name: "Profiles & watchtime",
+        detail: "Your radio/stream time, tracked on your own profile.",
+      },
+      {
+        name: "Network graph",
+        detail: "An interactive map of how all of this connects.",
+      },
     ],
   },
 ];
@@ -136,7 +160,9 @@ export default function Colophon() {
         path="/colophon"
       />
 
-      <h1 className="text-3xl font-bold tracking-tight">How this site is built</h1>
+      <h1 className="text-3xl font-bold tracking-tight">
+        How this site is built
+      </h1>
       <p className="mt-2 text-sm text-muted-foreground">
         A look under the hood. Updated {LAST_UPDATED}.
       </p>
@@ -147,10 +173,10 @@ export default function Colophon() {
           Almost everything you see here — the{" "}
           <span className="font-semibold text-primary">live video</span>, the{" "}
           <span className="font-semibold text-primary">radio</span>, the{" "}
-          <span className="font-semibold text-primary">live chat</span> — runs on
-          hardware I own and software I wrote or assembled myself. No Twitch, no
-          third-party players, no rented platforms. I build it this way because I
-          like owning the whole thing end to end.
+          <span className="font-semibold text-primary">live chat</span> — runs
+          on hardware I own and software I wrote or assembled myself. No Twitch,
+          no third-party players, no rented platforms. I build it this way
+          because I like owning the whole thing end to end.
         </p>
       </div>
 
@@ -169,7 +195,9 @@ export default function Colophon() {
                   className="rounded-lg border border-border bg-muted/40 p-3"
                 >
                   <p className="font-medium">{item.name}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{item.detail}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {item.detail}
+                  </p>
                 </div>
               ))}
             </div>
