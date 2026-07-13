@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using GuildedThorn.com.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -94,16 +96,80 @@ public class RadioSourceListener(
         // delivery never blocks the audio relay below.
         _ = NotifyWentLiveAsync();
 
+        var startedAt = DateTime.UtcNow;
+        var (recordingStream, recordingFileName) = TryStartRecording(contentType, startedAt);
+
         try {
             var buffer = new byte[16 * 1024];
             int read;
             while ((read = await stream.ReadAsync(buffer, ct)) > 0) {
                 // buffer[..read] copies into a fresh array the listeners can keep.
-                radio.Publish(buffer[..read]);
+                var chunk = buffer[..read];
+                radio.Publish(chunk);
+
+                if (recordingStream is not null) {
+                    try {
+                        await recordingStream.WriteAsync(chunk, ct);
+                    } catch (Exception ex) {
+                        logger.LogWarning(ex, "Recording write failed — dropping recording for this broadcast");
+                        await recordingStream.DisposeAsync();
+                        recordingStream = null;
+                    }
+                }
             }
         } finally {
             radio.StopSource();
+
+            if (recordingStream is not null) {
+                await recordingStream.DisposeAsync();
+                await SaveRecordingAsync(recordingFileName!, name, contentType, startedAt, ct);
+            }
+
             logger.LogInformation("Radio source disconnected");
+        }
+    }
+
+    // Same bytes listeners get, written straight to disk — no transcoding.
+    // Failure here (disk full, permissions, bad config path) must never take
+    // the live broadcast down, so it's isolated from the relay loop above.
+    private (FileStream? stream, string? fileName) TryStartRecording(string contentType, DateTime startedAt) {
+        try {
+            var recordingsDir = config.GetValue<string>("Radio:RecordingsDirectory") ?? "data/radio-recordings";
+            Directory.CreateDirectory(recordingsDir);
+
+            var ext = contentType.Contains("ogg", StringComparison.OrdinalIgnoreCase) ? "ogg"
+                : contentType.Contains("aac", StringComparison.OrdinalIgnoreCase) ? "aac"
+                : "mp3";
+            var fileName = $"{startedAt:yyyyMMdd-HHmmss}.{ext}";
+            var stream = File.Create(Path.Combine(recordingsDir, fileName));
+            return (stream, fileName);
+        } catch (Exception ex) {
+            logger.LogWarning(ex, "Failed to start recording this broadcast — continuing live-only");
+            return (null, null);
+        }
+    }
+
+    private async Task SaveRecordingAsync(string fileName, string stationName, string contentType,
+        DateTime startedAt, CancellationToken ct) {
+        try {
+            var recordingsDir = config.GetValue<string>("Radio:RecordingsDirectory") ?? "data/radio-recordings";
+            var sizeBytes = new FileInfo(Path.Combine(recordingsDir, fileName)).Length;
+            var endedAt = DateTime.UtcNow;
+
+            var recording = new RadioRecording {
+                FileName = fileName,
+                StationName = string.IsNullOrWhiteSpace(stationName) ? radio.StationName : stationName,
+                ContentType = contentType,
+                StartedAt = startedAt,
+                EndedAt = endedAt,
+                DurationSeconds = (long)(endedAt - startedAt).TotalSeconds,
+                SizeBytes = sizeBytes,
+            };
+            await mongo.GetRadioRecordingsCollection().InsertOneAsync(recording, cancellationToken: ct);
+            logger.LogInformation("Saved radio recording {FileName} ({Duration}s, {Size} bytes)",
+                fileName, recording.DurationSeconds, sizeBytes);
+        } catch (Exception ex) {
+            logger.LogWarning(ex, "Failed to save recording metadata for {FileName}", fileName);
         }
     }
 

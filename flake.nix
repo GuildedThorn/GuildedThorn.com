@@ -112,6 +112,21 @@
                 agenix to provision it.
               '';
             };
+
+            recordingsDirectory = lib.mkOption {
+              type = lib.types.nullOr lib.types.path;
+              default = null;
+              description = ''
+                Where radio broadcasts get recorded (see RadioSourceListener).
+                Left null, recordings live under the service's own state
+                directory. Set this to point somewhere else entirely — e.g. a
+                TrueNAS share mounted at /mnt/truenas/radio — the mount itself
+                is a host-level concern (your NixOS fileSystems config), not
+                something this flake manages; this option just tells the
+                service where to write and grants it access via
+                ReadWritePaths.
+              '';
+            };
           };
 
           config = lib.mkIf cfg.enable {
@@ -124,6 +139,9 @@
               environment = {
                 ASPNETCORE_URLS = "http://127.0.0.1:${toString cfg.port}";
                 ASPNETCORE_ENVIRONMENT = "Production";
+              }
+              // lib.optionalAttrs (cfg.recordingsDirectory != null) {
+                Radio__RecordingsDirectory = toString cfg.recordingsDirectory;
               };
 
               # The app resolves wwwroot/ and Resources/config.json relative to
@@ -141,6 +159,9 @@
                 if [ ! -e "$STATE_DIRECTORY/Resources/config.json" ]; then
                   cp --no-preserve=mode,ownership ${appDir}/Resources/config.json "$STATE_DIRECTORY/Resources/"
                 fi
+              ''
+              + lib.optionalString (cfg.recordingsDirectory == null) ''
+                mkdir -p "$STATE_DIRECTORY/data/radio-recordings"
               '';
 
               serviceConfig = {
@@ -153,6 +174,9 @@
               }
               // lib.optionalAttrs (cfg.environmentFile != null) {
                 EnvironmentFile = cfg.environmentFile;
+              }
+              // lib.optionalAttrs (cfg.recordingsDirectory != null) {
+                ReadWritePaths = [ (toString cfg.recordingsDirectory) ];
               };
             };
           };
