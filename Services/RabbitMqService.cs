@@ -25,12 +25,15 @@ public class RabbitMqService {
         _connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
         _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
 
+        // Must be awaited: publishing to the default exchange before this queue
+        // exists is silently dropped by RabbitMQ (no error), so an unawaited call
+        // here could lose the first guestbook message after every restart.
         _channel.QueueDeclareAsync(
             queue: "guestbook_messages",
             durable: true,
             exclusive: false,
             autoDelete: false,
-            arguments: null);
+            arguments: null).GetAwaiter().GetResult();
     }
 
     public async Task PublishGuestbookMessageAsync(string name, string message,
