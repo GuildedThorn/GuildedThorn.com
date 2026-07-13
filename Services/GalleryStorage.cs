@@ -10,7 +10,7 @@ namespace GuildedThorn.com.Services;
 /// <c>bun run build</c> and <c>dotnet publish</c> (which both touch the app's
 /// own working tree) can't ever reach them, let alone wipe them. Public
 /// access still goes through the same <c>/images/gallery/{id}.{ext}</c> URL
-/// the frontend already requests (see the MapGet redirect in Program.cs) —
+/// the frontend already requests (see the MapGet proxy in Program.cs) —
 /// only the backing store changed, not the API.
 ///
 /// Configure with <c>Storage:S3BucketGallery</c> (defaults to "gallery").
@@ -27,6 +27,6 @@ public sealed class GalleryStorage(S3StorageService storage, IConfiguration conf
     public Task DeleteAsync(string id, string fileType) =>
         storage.DeleteAsync(_bucket, KeyFor(id, fileType));
 
-    public Task<string> GetUrlAsync(string id, string fileType) =>
-        storage.GetPresignedUrlAsync(_bucket, KeyFor(id, fileType), TimeSpan.FromHours(1));
+    public Task<S3ObjectStream?> GetObjectAsync(string id, string fileType) =>
+        storage.GetObjectAsync(_bucket, KeyFor(id, fileType));
 }
