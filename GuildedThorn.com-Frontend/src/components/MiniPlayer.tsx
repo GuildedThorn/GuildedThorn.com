@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Pause, Play, Radio as RadioIcon, X } from "lucide-react";
-import { useRadioPlayer } from "@components/RadioPlayerContext";
+import { formatArchiveSubtitle, useRadioPlayer } from "@components/RadioPlayerContext";
 
 // Floating bar that follows you around the site once the radio is playing, so
 // audio keeps going when you leave /radio. Hidden on the /radio page itself
 // (the full player is there) and before you've ever started playback.
 export default function MiniPlayer() {
-    const { playing, loading, title, artist, toggle, pause } = useRadioPlayer();
+    const { playing, loading, mode, archive, title, artist, toggle, pause } = useRadioPlayer();
     const location = useLocation();
     const [activated, setActivated] = useState(false);
     const [dismissed, setDismissed] = useState(false);
@@ -22,6 +22,14 @@ export default function MiniPlayer() {
     if (location.pathname === "/radio") return null;
     if (!activated || dismissed) return null;
 
+    const displayTitle =
+        mode === "archive" && archive ? archive.stationName || "GuildedThorn Radio" : title || "GuildedThorn Radio";
+    const displaySubtitle = loading
+        ? "Buffering…"
+        : mode === "archive" && archive
+          ? formatArchiveSubtitle(archive)
+          : artist || "Live";
+
     return (
         <div className="fixed bottom-4 left-4 z-40 print:hidden">
             <div className="flex items-center gap-3 rounded-full border border-border bg-background/95 px-3 py-2 shadow-lg backdrop-blur">
@@ -35,10 +43,8 @@ export default function MiniPlayer() {
                 </button>
 
                 <Link to="/radio" className="min-w-0 max-w-[44vw] sm:max-w-xs" title="Open radio">
-                    <p className="truncate text-xs font-semibold">{title || "GuildedThorn Radio"}</p>
-                    <p className="truncate text-[10px] text-muted-foreground">
-                        {loading ? "Buffering…" : artist || "Live"}
-                    </p>
+                    <p className="truncate text-xs font-semibold">{displayTitle}</p>
+                    <p className="truncate text-[10px] text-muted-foreground">{displaySubtitle}</p>
                 </Link>
 
                 <Link

@@ -160,6 +160,25 @@ export async function deleteStreamEvent(id: string): Promise<void> {
 	if (!res.ok) throw new Error(`Failed to delete stream: ${res.status}`);
 }
 
+export interface RadioRecording {
+	id: string;
+	stationName: string;
+	startedAt: string; // ISO
+	durationSeconds: number;
+	sizeBytes: number;
+}
+
+export interface RadioRecordingsPage {
+	items: RadioRecording[];
+	totalPages: number;
+}
+
+export async function getRadioRecordings(page = 1, pageSize = 10): Promise<RadioRecordingsPage> {
+	const res = await fetch(`/api/radio/recordings?page=${page}&pageSize=${pageSize}`);
+	if (!res.ok) throw new Error(`Failed to load radio archive: ${res.status}`);
+	return res.json();
+}
+
 export async function updateUserData(userData: { FirstName?: string; LastName?: string; Email?: string }) {
 	const response = await fetch("/api/user/updateData", {
 		method: "POST",
