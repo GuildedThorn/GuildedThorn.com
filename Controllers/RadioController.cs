@@ -112,17 +112,36 @@ public class RadioController(
 
     // id is only ever used to look up a Mongo doc — the actual object key
     // comes from that doc's (server-controlled) FileName, never from this
-    // parameter directly. Redirects straight to SeaweedFS instead of
-    // proxying the bytes through this app.
+    // parameter directly. SeaweedFS only resolves/is reachable on the LAN,
+    // so a redirect straight to it is a dead link for anyone off-network
+    // (the website's own public visitors included) — this app fetches the
+    // bytes itself and streams them back, forwarding Range so scrubbing in
+    // the browser (and LavaLink, if it ever seeks) still works.
     [AllowAnonymous]
     [HttpGet("recordings/{id}/stream")]
-    public async Task<IActionResult> StreamRecording(string id) {
+    public async Task StreamRecording(string id) {
         var recording = await mongo.GetRadioRecordingsCollection()
             .Find(r => r.Id == id)
             .FirstOrDefaultAsync();
-        if (recording is null) return NotFound();
+        if (recording is null) {
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
 
-        var url = await storage.GetPresignedUrlAsync(RecordingsBucket, recording.FileName, TimeSpan.FromMinutes(30));
-        return Redirect(url);
+        using var obj = await storage.GetObjectAsync(RecordingsBucket, recording.FileName, Request.Headers.Range);
+        if (obj is null) {
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        Response.ContentType = obj.ContentType;
+        Response.ContentLength = obj.ContentLength;
+        Response.Headers["Accept-Ranges"] = "bytes";
+        if (obj.IsPartial) {
+            Response.StatusCode = StatusCodes.Status206PartialContent;
+            if (obj.ContentRange is not null) Response.Headers["Content-Range"] = obj.ContentRange;
+        }
+
+        await obj.Content.CopyToAsync(Response.Body);
     }
 }

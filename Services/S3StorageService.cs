@@ -81,13 +81,38 @@ public class S3StorageService {
         }
     }
 
-    // Lets clients (browsers, LavaLink) fetch straight from SeaweedFS instead
-    // of proxying the bytes through this app.
-    public Task<string> GetPresignedUrlAsync(string bucket, string key, TimeSpan expiry) =>
-        _client.Value.GetPreSignedURLAsync(new GetPreSignedUrlRequest {
-            BucketName = bucket,
-            Key = key,
-            Verb = HttpVerb.GET,
-            Expires = DateTime.UtcNow.Add(expiry),
-        });
+    // SeaweedFS only resolves/is reachable on the LAN (see truenas.guildedthorn.arpa),
+    // so a presigned URL handed to a public client's own browser/LavaLink is a dead
+    // link off-network. Fetch the bytes here instead and let callers stream them back
+    // over the connection the client already has open — the app is the only thing
+    // that needs LAN access to SeaweedFS.
+    //
+    // rangeHeader is the client's raw incoming "Range" header (e.g. "bytes=500-999"
+    // or the open-ended/suffix forms), forwarded to S3 as-is rather than parsed here.
+    public async Task<S3ObjectStream?> GetObjectAsync(string bucket, string key, string? rangeHeader = null) {
+        var request = new GetObjectRequest { BucketName = bucket, Key = key };
+        if (!string.IsNullOrEmpty(rangeHeader)) request.ByteRange = new ByteRange(rangeHeader);
+
+        try {
+            var response = await _client.Value.GetObjectAsync(request);
+            return new S3ObjectStream(
+                response.ResponseStream,
+                string.IsNullOrWhiteSpace(response.Headers.ContentType) ? "application/octet-stream" : response.Headers.ContentType,
+                response.ContentLength,
+                response.ContentRange,
+                response.HttpStatusCode == HttpStatusCode.PartialContent);
+        } catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
+            return null;
+        }
+    }
+}
+
+public sealed class S3ObjectStream(Stream content, string contentType, long contentLength, string? contentRange, bool isPartial) : IDisposable {
+    public Stream Content { get; } = content;
+    public string ContentType { get; } = contentType;
+    public long ContentLength { get; } = contentLength;
+    public string? ContentRange { get; } = contentRange;
+    public bool IsPartial { get; } = isPartial;
+
+    public void Dispose() => Content.Dispose();
 }

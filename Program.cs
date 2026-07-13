@@ -326,14 +326,18 @@ app.MapHub<RadioHub>("/radiohub").RequireCors("AllowFrontend");
 app.MapControllers().RequireCors("AllowFrontend");
 
 // Gallery images now live in SeaweedFS, not a local static-files mapping —
-// same /images/gallery/{id}.{ext} URL the frontend already requests, just a
-// redirect to a short-lived presigned URL instead of serving bytes directly.
+// same /images/gallery/{id}.{ext} URL the frontend already requests. SeaweedFS
+// only resolves/is reachable on the LAN, so a public visitor's own browser
+// can't be redirected straight to it — the app fetches the bytes itself and
+// streams them back over the connection it already has.
 app.MapGet("/images/gallery/{fileName}", async (string fileName, GalleryStorage galleryStorage) => {
     var dot = fileName.LastIndexOf('.');
     if (dot <= 0) return Results.NotFound();
 
-    var url = await galleryStorage.GetUrlAsync(fileName[..dot], fileName[(dot + 1)..]);
-    return Results.Redirect(url);
+    var obj = await galleryStorage.GetObjectAsync(fileName[..dot], fileName[(dot + 1)..]);
+    if (obj is null) return Results.NotFound();
+
+    return Results.Stream(obj.Content, obj.ContentType);
 }).RequireCors("AllowFrontend");
 app.MapHealthChecks("/health").AllowAnonymous();
 
