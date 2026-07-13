@@ -126,20 +126,30 @@
                 ASPNETCORE_ENVIRONMENT = "Production";
               };
 
-              # The app resolves wwwroot/ and Resources/config.json relative to
-              # its working directory, so assemble a writable content root in
-              # the state directory. Gallery uploads and radio recordings live
-              # in SeaweedFS (S3-compatible, see S3StorageService) rather than
-              # here, so this no longer needs to preserve anything across
-              # redeploys beyond config.json — copying never deletes, purely
-              # out of caution.
+              # The app resolves wwwroot/ relative to its working directory,
+              # so assemble a writable content root in the state directory.
+              # Gallery uploads and radio recordings live in SeaweedFS
+              # (S3-compatible, see S3StorageService) rather than here, so
+              # this no longer needs to preserve anything across redeploys
+              # beyond config.json — copying never deletes, purely out of
+              # caution.
+              #
+              # Resources/config.json is deliberately gitignored and was
+              # never part of the built package (Program.cs loads it with
+              # optional: true precisely because every required value is
+              # also settable via EnvironmentFile) — only copy it forward
+              # if an operator has actually placed one in the package
+              # (e.g. via a future Content item). Copying unconditionally
+              # here would fail the whole preStart — and therefore the
+              # entire unit — the moment the state directory's own copy
+              # went missing, even though the app runs fine without it.
               preStart = ''
                 mkdir -p "$STATE_DIRECTORY/wwwroot" "$STATE_DIRECTORY/Resources"
                 # Drop stale top-level build files (e.g. a sitemap.xml that's since
                 # moved to a controller) so they can't shadow app routes.
                 find "$STATE_DIRECTORY/wwwroot" -maxdepth 1 -type f -delete
                 cp -r --no-preserve=mode,ownership ${appDir}/wwwroot/. "$STATE_DIRECTORY/wwwroot/"
-                if [ ! -e "$STATE_DIRECTORY/Resources/config.json" ]; then
+                if [ ! -e "$STATE_DIRECTORY/Resources/config.json" ] && [ -e "${appDir}/Resources/config.json" ]; then
                   cp --no-preserve=mode,ownership ${appDir}/Resources/config.json "$STATE_DIRECTORY/Resources/"
                 fi
               '';
