@@ -17,28 +17,44 @@ namespace GuildedThorn.com.Services;
 //
 // Buckets aren't created here — create them once yourself (SeaweedFS admin
 // UI or `mc mb`) before pointing config at them.
+//
+// The actual S3 client is built lazily, on first real use, rather than in
+// the constructor. RadioSourceListener (which depends on this) is registered
+// via AddHostedService, so its constructor — and everything it depends on —
+// runs at host startup, before the app can serve a single request. A missing
+// or typo'd Storage:S3* config value throwing there would take the entire
+// site down at boot, not just degrade radio recording/gallery uploads.
+// Deferring construction means that failure surfaces only where it's used
+// (RadioSourceListener already isolates recording failures so they don't
+// kill the live broadcast; a gallery upload/delete failing is just that one
+// HTTP request 500ing, not the whole process refusing to start).
 public class S3StorageService {
-    private readonly IAmazonS3 _client;
-    private readonly TransferUtility _transferUtility;
+    private readonly IConfiguration _configuration;
+    private readonly Lazy<IAmazonS3> _client;
+    private readonly Lazy<TransferUtility> _transferUtility;
 
     public S3StorageService(IConfiguration configuration) {
+        _configuration = configuration;
+        _client = new Lazy<IAmazonS3>(CreateClient);
+        _transferUtility = new Lazy<TransferUtility>(() => new TransferUtility(_client.Value));
+    }
+
+    private IAmazonS3 CreateClient() {
         var config = new AmazonS3Config {
-            ServiceURL = configuration["Storage:S3Endpoint"]
+            ServiceURL = _configuration["Storage:S3Endpoint"]
                 ?? throw new InvalidOperationException("Storage:S3Endpoint not configured."),
             ForcePathStyle = true,
-            AuthenticationRegion = configuration["Storage:S3Region"] ?? "us-east-1",
+            AuthenticationRegion = _configuration["Storage:S3Region"] ?? "us-east-1",
         };
 
-        _client = new AmazonS3Client(
-            configuration["Storage:S3AccessKey"] ?? throw new InvalidOperationException("Storage:S3AccessKey not configured."),
-            configuration["Storage:S3SecretKey"] ?? throw new InvalidOperationException("Storage:S3SecretKey not configured."),
+        return new AmazonS3Client(
+            _configuration["Storage:S3AccessKey"] ?? throw new InvalidOperationException("Storage:S3AccessKey not configured."),
+            _configuration["Storage:S3SecretKey"] ?? throw new InvalidOperationException("Storage:S3SecretKey not configured."),
             config);
-
-        _transferUtility = new TransferUtility(_client);
     }
 
     public Task UploadAsync(string bucket, string key, Stream stream, string? contentType) =>
-        _transferUtility.UploadAsync(new TransferUtilityUploadRequest {
+        _transferUtility.Value.UploadAsync(new TransferUtilityUploadRequest {
             BucketName = bucket,
             Key = key,
             InputStream = stream,
@@ -50,7 +66,7 @@ public class S3StorageService {
     // broadcast) rather than already held as a Stream. TransferUtility
     // multiparts large files automatically.
     public Task UploadFileAsync(string bucket, string key, string filePath, string? contentType) =>
-        _transferUtility.UploadAsync(new TransferUtilityUploadRequest {
+        _transferUtility.Value.UploadAsync(new TransferUtilityUploadRequest {
             BucketName = bucket,
             Key = key,
             FilePath = filePath,
@@ -59,7 +75,7 @@ public class S3StorageService {
 
     public async Task DeleteAsync(string bucket, string key) {
         try {
-            await _client.DeleteObjectAsync(bucket, key);
+            await _client.Value.DeleteObjectAsync(bucket, key);
         } catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
             // already gone
         }
@@ -68,7 +84,7 @@ public class S3StorageService {
     // Lets clients (browsers, LavaLink) fetch straight from SeaweedFS instead
     // of proxying the bytes through this app.
     public Task<string> GetPresignedUrlAsync(string bucket, string key, TimeSpan expiry) =>
-        _client.GetPreSignedURLAsync(new GetPreSignedUrlRequest {
+        _client.Value.GetPreSignedURLAsync(new GetPreSignedUrlRequest {
             BucketName = bucket,
             Key = key,
             Verb = HttpVerb.GET,
