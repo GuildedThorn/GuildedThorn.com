@@ -6,13 +6,19 @@ using System.Threading.Tasks;
 using GuildedThorn.com.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 
 namespace GuildedThorn.com.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]
-public class GuestBookController(MongoDbService mongoDbService, RabbitMqService rabbitMqService, ChatModerationService mod) : ControllerBase {
+public class GuestBookController(
+    MongoDbService mongoDbService,
+    RabbitMqService rabbitMqService,
+    ChatModerationService mod,
+    PushNotificationService push,
+    ILogger<GuestBookController> logger) : ControllerBase {
 
     [Authorize(Policy = "PrivilegedOnly")]
     [HttpPost("message")]      // keep the route short & REST‑y
@@ -48,8 +54,20 @@ public class GuestBookController(MongoDbService mongoDbService, RabbitMqService 
         // ──────────────────────────────────
         var doc = new Models.GuestBookMessages { Username = username, Message = message };
         await coll.InsertOneAsync(doc);
-        
+
         await rabbitMqService.PublishGuestbookMessageAsync(username, message);
+
+        // Push failures must never break the guestbook post (same fire-and-log
+        // pattern as RadioSourceListener.NotifyWentLiveAsync).
+        try {
+            var preview = message.Length > 120 ? message[..117] + "..." : message;
+            await push.SendToAllAsync(
+                title: "New guestbook message",
+                body: $"{username}: {preview}",
+                url: "/guestbook");
+        } catch (Exception ex) {
+            logger.LogWarning(ex, "Failed to send guestbook push notification");
+        }
 
         return Ok("Guest‑book message created successfully.");
     }
