@@ -68,4 +68,8 @@ public class MongoDbService {
     public IMongoCollection<UserStats> GetUserStatsCollection() {
         return _database.GetCollection<UserStats>("UserStats");
     }
+
+    public IMongoCollection<RadioRecording> GetRadioRecordingsCollection() {
+        return _database.GetCollection<RadioRecording>("RadioRecordings");
+    }
 }

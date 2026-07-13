@@ -1,26 +1,32 @@
+using System;
 using System.IO;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace GuildedThorn.com.Services;
 
 /// <summary>
-/// Resolved location of uploaded gallery images. Kept OUTSIDE wwwroot so that
-/// <c>bun run build</c> (which empties wwwroot) and <c>dotnet publish</c> (which
-/// overwrites it) can never nuke user uploads. The files are served back at the
-/// <c>/images/gallery</c> URL by a dedicated static-files mapping in Program.cs,
-/// so the public URLs are unchanged.
+/// Gallery images live in SeaweedFS (S3-compatible), not local disk — so
+/// <c>bun run build</c> and <c>dotnet publish</c> (which both touch the app's
+/// own working tree) can't ever reach them, let alone wipe them. Public
+/// access still goes through the same <c>/images/gallery/{id}.{ext}</c> URL
+/// the frontend already requests (see the MapGet redirect in Program.cs) —
+/// only the backing store changed, not the API.
 ///
-/// Configure with <c>Storage:GalleryPath</c> (absolute path recommended in
-/// production, e.g. a persistent volume); defaults to <c>&lt;ContentRoot&gt;/data/gallery</c>.
+/// Configure with <c>Storage:S3BucketGallery</c> (defaults to "gallery").
+/// The bucket itself isn't created here — create it once yourself.
 /// </summary>
-public sealed class GalleryStorage {
-    public string RootPath { get; }
+public sealed class GalleryStorage(S3StorageService storage, IConfiguration configuration) {
+    private readonly string _bucket = configuration["Storage:S3BucketGallery"] ?? "gallery";
 
-    public GalleryStorage(string rootPath) {
-        RootPath = Path.GetFullPath(rootPath);
-        Directory.CreateDirectory(RootPath);
-    }
+    private static string KeyFor(string id, string fileType) => $"{id}.{fileType}";
 
-    /// <summary>Absolute path to the file backing a given image id + extension.</summary>
-    public string PathFor(string id, string fileType) =>
-        Path.Combine(RootPath, $"{id}.{fileType}");
+    public Task UploadAsync(string id, string fileType, Stream stream, string? contentType) =>
+        storage.UploadAsync(_bucket, KeyFor(id, fileType), stream, contentType);
+
+    public Task DeleteAsync(string id, string fileType) =>
+        storage.DeleteAsync(_bucket, KeyFor(id, fileType));
+
+    public Task<string> GetUrlAsync(string id, string fileType) =>
+        storage.GetPresignedUrlAsync(_bucket, KeyFor(id, fileType), TimeSpan.FromHours(1));
 }

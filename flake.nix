@@ -29,7 +29,7 @@
 
             # Regenerate after changing package-lock.json:
             #   nix run nixpkgs#prefetch-npm-deps -- GuildedThorn.com-Frontend/package-lock.json
-            npmDepsHash = "sha256-ak2OWMDKh+/xhkqY3xTESsvP/JLScCiV7rW6zmgFgT4=";
+            npmDepsHash = "sha256-GoOjyBUg+MtAMfJFp7/kY8x9tWvw6niD74Cn5wRPIoU=";
 
             # vite.config.ts writes to ../wwwroot (one level above the source root)
             installPhase = ''
@@ -108,8 +108,8 @@
               default = null;
               description = ''
                 EnvironmentFile with secrets (Jwt__Key, MongoDB__ConnectionString,
-                RabbitMQ__Password, Spotify__ClientSecret, ...). Use sops-nix or
-                agenix to provision it.
+                RabbitMQ__Password, Spotify__ClientSecret, Storage__S3AccessKey,
+                Storage__S3SecretKey, ...). Use sops-nix or agenix to provision it.
               '';
             };
           };
@@ -127,15 +127,16 @@
               };
 
               # The app resolves wwwroot/ and Resources/config.json relative to
-              # its working directory, and gallery uploads must be writable, so
-              # assemble a writable content root in the state directory. Copying
-              # never deletes, so uploaded gallery images survive redeploys.
+              # its working directory, so assemble a writable content root in
+              # the state directory. Gallery uploads and radio recordings live
+              # in SeaweedFS (S3-compatible, see S3StorageService) rather than
+              # here, so this no longer needs to preserve anything across
+              # redeploys beyond config.json — copying never deletes, purely
+              # out of caution.
               preStart = ''
-                mkdir -p "$STATE_DIRECTORY/wwwroot/images/gallery" "$STATE_DIRECTORY/Resources"
+                mkdir -p "$STATE_DIRECTORY/wwwroot" "$STATE_DIRECTORY/Resources"
                 # Drop stale top-level build files (e.g. a sitemap.xml that's since
-                # moved to a controller) so they can't shadow app routes. Only the
-                # top level — subdirectories are left alone so uploaded avatars
-                # (images/avatars) survive redeploys.
+                # moved to a controller) so they can't shadow app routes.
                 find "$STATE_DIRECTORY/wwwroot" -maxdepth 1 -type f -delete
                 cp -r --no-preserve=mode,ownership ${appDir}/wwwroot/. "$STATE_DIRECTORY/wwwroot/"
                 if [ ! -e "$STATE_DIRECTORY/Resources/config.json" ]; then

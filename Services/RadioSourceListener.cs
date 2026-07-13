@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using GuildedThorn.com.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -21,10 +23,13 @@ namespace GuildedThorn.com.Services;
 public class RadioSourceListener(
     RadioService radio,
     MongoDbService mongo,
+    S3StorageService storage,
     IConfiguration config,
     PushNotificationService push,
     IHubContext<RadioHub> radioHub,
     ILogger<RadioSourceListener> logger) : BackgroundService {
+
+    private string RecordingsBucket => config["Storage:S3BucketRadio"] ?? "radio-archive";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         var port = config.GetValue<int?>("Radio:SourcePort") ?? 8000;
@@ -94,16 +99,83 @@ public class RadioSourceListener(
         // delivery never blocks the audio relay below.
         _ = NotifyWentLiveAsync();
 
+        var startedAt = DateTime.UtcNow;
+        var (recordingStream, tempPath, recordingFileName) = TryStartRecording(contentType, startedAt);
+
         try {
             var buffer = new byte[16 * 1024];
             int read;
             while ((read = await stream.ReadAsync(buffer, ct)) > 0) {
                 // buffer[..read] copies into a fresh array the listeners can keep.
-                radio.Publish(buffer[..read]);
+                var chunk = buffer[..read];
+                radio.Publish(chunk);
+
+                if (recordingStream is not null) {
+                    try {
+                        await recordingStream.WriteAsync(chunk, ct);
+                    } catch (Exception ex) {
+                        logger.LogWarning(ex, "Recording write failed — dropping recording for this broadcast");
+                        await recordingStream.DisposeAsync();
+                        recordingStream = null;
+                    }
+                }
             }
         } finally {
             radio.StopSource();
+
+            if (recordingStream is not null) {
+                await recordingStream.DisposeAsync();
+                await SaveRecordingAsync(tempPath!, recordingFileName!, name, contentType, startedAt, ct);
+            }
+
             logger.LogInformation("Radio source disconnected");
+        }
+    }
+
+    // Same bytes listeners get, written to a local temp file first — no
+    // transcoding, and no persistent local storage either: the temp file only
+    // exists for the duration of the broadcast + its upload to S3, then gets
+    // deleted (see SaveRecordingAsync). Failure here (disk full, permissions)
+    // must never take the live broadcast down, so it's isolated from the
+    // relay loop above.
+    private (FileStream? stream, string? tempPath, string? fileName) TryStartRecording(string contentType, DateTime startedAt) {
+        try {
+            var ext = contentType.Contains("ogg", StringComparison.OrdinalIgnoreCase) ? "ogg"
+                : contentType.Contains("aac", StringComparison.OrdinalIgnoreCase) ? "aac"
+                : "mp3";
+            var fileName = $"{startedAt:yyyyMMdd-HHmmss}.{ext}";
+            var tempPath = Path.Combine(Path.GetTempPath(), $"guildedthorn-radio-{Guid.NewGuid():N}.{ext}");
+            var stream = File.Create(tempPath);
+            return (stream, tempPath, fileName);
+        } catch (Exception ex) {
+            logger.LogWarning(ex, "Failed to start recording this broadcast — continuing live-only");
+            return (null, null, null);
+        }
+    }
+
+    private async Task SaveRecordingAsync(string tempPath, string fileName, string stationName, string contentType,
+        DateTime startedAt, CancellationToken ct) {
+        try {
+            var sizeBytes = new FileInfo(tempPath).Length;
+            await storage.UploadFileAsync(RecordingsBucket, fileName, tempPath, contentType);
+            var endedAt = DateTime.UtcNow;
+
+            var recording = new RadioRecording {
+                FileName = fileName,
+                StationName = string.IsNullOrWhiteSpace(stationName) ? radio.StationName : stationName,
+                ContentType = contentType,
+                StartedAt = startedAt,
+                EndedAt = endedAt,
+                DurationSeconds = (long)(endedAt - startedAt).TotalSeconds,
+                SizeBytes = sizeBytes,
+            };
+            await mongo.GetRadioRecordingsCollection().InsertOneAsync(recording, cancellationToken: ct);
+            logger.LogInformation("Saved radio recording {FileName} ({Duration}s, {Size} bytes)",
+                fileName, recording.DurationSeconds, sizeBytes);
+        } catch (Exception ex) {
+            logger.LogWarning(ex, "Failed to save recording {FileName}", fileName);
+        } finally {
+            try { File.Delete(tempPath); } catch { /* best effort */ }
         }
     }
 

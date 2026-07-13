@@ -73,7 +73,7 @@ jobs:
       - name: Import GPG key
         id: gpg
         if: steps.diff.outputs.changed == 'true' && env.GPG_KEY != ''
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.NIX_BOT_GPG_KEY }}
           passphrase: ${{ secrets.NIX_BOT_GPG_PASSPHRASE }}
