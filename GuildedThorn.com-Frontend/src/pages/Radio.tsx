@@ -4,9 +4,10 @@ import Slider from "@components/ui/Slider.tsx";
 import { Card } from "@components/ui/Card.tsx";
 import { cn } from "@lib/utils";
 import RadioSchedule from "@components/RadioSchedule";
+import RadioArchive from "@components/RadioArchive";
 import NotifyButton from "@components/NotifyButton";
 import ChatPanel from "@components/ChatPanel";
-import { useRadioPlayer } from "@components/RadioPlayerContext";
+import { formatArchiveSubtitle, useRadioPlayer } from "@components/RadioPlayerContext";
 
 // Playback now lives in <RadioPlayerProvider> (above the router) so audio keeps
 // going when you navigate away — this page is just the full UI for it.
@@ -15,15 +16,21 @@ function Radio() {
         online,
         playing,
         loading,
+        mode,
+        archive,
         title,
         artist,
         listeners,
         volume,
         muted,
-        toggle,
+        toggleLive,
         toggleMute,
         setVolume,
     } = useRadioPlayer();
+
+    // This card/button is the LIVE control specifically — reflect and target the
+    // live stream even if an archive happens to be playing right now.
+    const liveActive = playing && mode === "live";
 
     return (
         <div className="page space-y-8">
@@ -65,7 +72,14 @@ function Radio() {
                             </p>
                         </div>
 
-                        {playing && loading && (
+                        {mode === "archive" && archive && (
+                            <p className="text-center text-xs text-muted-foreground">
+                                📼 Playing archived broadcast — {archive.stationName || "GuildedThorn Radio"},{" "}
+                                {formatArchiveSubtitle(archive)}
+                            </p>
+                        )}
+
+                        {liveActive && loading && (
                             <div className="flex justify-center text-muted-foreground">
                                 <RefreshCw className="animate-spin" size={24} />
                             </div>
@@ -74,12 +88,12 @@ function Radio() {
                         <div className="flex items-center justify-center">
                             <Button
                                 variant="outline"
-                                onClick={toggle}
+                                onClick={toggleLive}
                                 disabled={online === false}
                                 className="h-16 w-16 rounded-full"
-                                aria-label={playing ? "Pause" : "Play"}
+                                aria-label={liveActive ? "Pause" : "Play"}
                             >
-                                {playing ? <Pause size={32} /> : <Play size={32} />}
+                                {liveActive ? <Pause size={32} /> : <Play size={32} />}
                             </Button>
                         </div>
 
@@ -115,6 +129,7 @@ function Radio() {
         </div>
 
             <RadioSchedule />
+            <RadioArchive />
         </div>
     );
 }

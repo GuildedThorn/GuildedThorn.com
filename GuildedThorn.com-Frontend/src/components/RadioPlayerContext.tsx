@@ -9,11 +9,13 @@ import {
 } from "react";
 import { type HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useWatchtime } from "@lib/useWatchtime";
+import type { RadioRecording } from "@backend/api";
 
 // Relative URLs: proxied in dev, same origin in prod.
 const STREAM_URL = "/api/radio/stream";
 const STATUS_URL = "/api/radio/status";
 const RADIO_HUB_URL = "/radiohub";
+const recordingStreamUrl = (id: string) => `/api/radio/recordings/${id}/stream`;
 
 interface RadioStatus {
     online: boolean;
@@ -23,18 +25,34 @@ interface RadioStatus {
     listeners?: number;
 }
 
+// Shared so MiniPlayer and RadioArchive format an archive's subtitle identically.
+export function formatArchiveSubtitle(recording: RadioRecording): string {
+    const started = new Date(recording.startedAt);
+    const date = started.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const time = started.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    const minutes = Math.round(recording.durationSeconds / 60);
+    return `${date}, ${time} · ${minutes}m`;
+}
+
 interface RadioPlayerValue {
     online: boolean | null;
     playing: boolean;
     loading: boolean;
+    mode: "live" | "archive";
     title: string;
     artist: string;
     listeners: number;
+    archive: RadioRecording | null;
     volume: number;
     muted: boolean;
+    // Flips playback for whatever's currently loaded (live or archive) — used by
+    // controls that don't care which one is active, e.g. the MiniPlayer.
     toggle: () => void;
-    play: () => void;
+    // Always targets the live stream, switching over from archive playback if
+    // that's what's currently active — used by /radio's dedicated live control.
+    toggleLive: () => void;
     pause: () => void;
+    playArchive: (recording: RadioRecording) => void;
     setVolume: (v: number) => void;
     toggleMute: () => void;
 }
@@ -53,6 +71,8 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
     const [online, setOnline] = useState<boolean | null>(null);
     const [playing, setPlaying] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [mode, setMode] = useState<"live" | "archive">("live");
+    const [archive, setArchive] = useState<RadioRecording | null>(null);
     const [title, setTitle] = useState("");
     const [artist, setArtist] = useState("");
     const [listeners, setListeners] = useState(0);
@@ -125,7 +145,7 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
 
         if (playing) {
             setLoading(true);
-            audio.src = STREAM_URL;
+            audio.src = mode === "archive" && archive ? recordingStreamUrl(archive.id) : STREAM_URL;
             audio.load();
             audio.play().catch(() => setPlaying(false));
         } else {
@@ -141,11 +161,12 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
             audio.removeEventListener("ended", onEnded);
             audio.removeEventListener("error", onError);
         };
-    }, [playing]);
+    }, [playing, mode, archive]);
 
-    // Realtime listener count, but only while actually listening.
+    // Realtime listener count, but only while actually listening to the live
+    // stream — an archive playback has no "concurrent listeners" concept.
     useEffect(() => {
-        if (!playing) return;
+        if (!playing || mode !== "live") return;
         const conn = new HubConnectionBuilder()
             .withUrl(RADIO_HUB_URL, { withCredentials: true })
             .withAutomaticReconnect()
@@ -165,7 +186,7 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
             hubRef.current = null;
             void conn.stop();
         };
-    }, [playing]);
+    }, [playing, mode]);
 
     // OS-level media controls (lock screen, media keys, notification).
     useEffect(() => {
@@ -173,11 +194,18 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
         const ms = navigator.mediaSession;
         if (playing) {
             try {
-                ms.metadata = new MediaMetadata({
-                    title: title || "GuildedThorn Radio",
-                    artist: artist || "Live",
-                    album: "GuildedThorn Radio",
-                });
+                ms.metadata =
+                    mode === "archive" && archive
+                        ? new MediaMetadata({
+                              title: archive.stationName || "GuildedThorn Radio",
+                              artist: formatArchiveSubtitle(archive),
+                              album: "GuildedThorn Radio Archive",
+                          })
+                        : new MediaMetadata({
+                              title: title || "GuildedThorn Radio",
+                              artist: artist || "Live",
+                              album: "GuildedThorn Radio",
+                          });
             } catch {
                 /* MediaMetadata unsupported — ignore */
             }
@@ -188,15 +216,34 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
         } else {
             ms.playbackState = "paused";
         }
-    }, [playing, title, artist]);
+    }, [playing, mode, archive, title, artist]);
 
     // Credit listening time to the logged-in user while actually playing (works
     // site-wide and across routes since this provider lives above the router).
     useWatchtime("radio", playing);
 
+    // Flips whatever's currently loaded — correct for a control that doesn't
+    // care which one is active (MiniPlayer, an archive row that's already
+    // playing). Switching TO a different source is playArchive/toggleLive's job.
     const toggle = useCallback(() => setPlaying((p) => !p), []);
-    const play = useCallback(() => setPlaying(true), []);
+
+    const toggleLive = useCallback(() => {
+        if (mode === "live") {
+            setPlaying((p) => !p);
+        } else {
+            setMode("live");
+            setArchive(null);
+            setPlaying(true);
+        }
+    }, [mode]);
+
     const pause = useCallback(() => setPlaying(false), []);
+
+    const playArchive = useCallback((recording: RadioRecording) => {
+        setMode("archive");
+        setArchive(recording);
+        setPlaying(true);
+    }, []);
 
     const setVolume = useCallback((v: number) => {
         setVolumeState(v);
@@ -220,14 +267,17 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
         online,
         playing,
         loading,
+        mode,
         title,
         artist,
         listeners,
+        archive,
         volume,
         muted,
         toggle,
-        play,
+        toggleLive,
         pause,
+        playArchive,
         setVolume,
         toggleMute,
     };
