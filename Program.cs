@@ -61,11 +61,11 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // ---------- Services ----------
-// Gallery uploads live outside wwwroot (see GalleryStorage) so frontend builds
-// and publishes can't wipe them. Default: <ContentRoot>/data/gallery.
-services.AddSingleton(new GalleryStorage(
-    configuration["Storage:GalleryPath"]
-        ?? Path.Combine(builder.Environment.ContentRootPath, "data", "gallery")));
+// Gallery uploads live in SeaweedFS (S3-compatible), not local disk — see
+// S3StorageService/GalleryStorage — so frontend builds/publishes structurally
+// can't touch them.
+services.AddSingleton<S3StorageService>();
+services.AddSingleton<GalleryStorage>();
 
 services.Configure<SpotifySettings>(configuration.GetSection("Spotify"));
 services.AddHttpClient();
@@ -310,15 +310,6 @@ void SetStaticCache(StaticFileResponseContext ctx)
 
 app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = SetStaticCache });
 
-// Serve uploaded gallery images from their out-of-wwwroot store at the same
-// /images/gallery URL the frontend already requests.
-app.UseStaticFiles(new StaticFileOptions {
-    FileProvider = new PhysicalFileProvider(
-        app.Services.GetRequiredService<GalleryStorage>().RootPath),
-    RequestPath = "/images/gallery",
-    OnPrepareResponse = SetStaticCache,
-});
-
 app.UseRouting();
 
 app.UseCors("AllowFrontend");
@@ -333,6 +324,17 @@ app.UseAuthorization();
 app.MapHub<ChatHub>("/chathub").RequireCors("AllowFrontend");
 app.MapHub<RadioHub>("/radiohub").RequireCors("AllowFrontend");
 app.MapControllers().RequireCors("AllowFrontend");
+
+// Gallery images now live in SeaweedFS, not a local static-files mapping —
+// same /images/gallery/{id}.{ext} URL the frontend already requests, just a
+// redirect to a short-lived presigned URL instead of serving bytes directly.
+app.MapGet("/images/gallery/{fileName}", async (string fileName, GalleryStorage galleryStorage) => {
+    var dot = fileName.LastIndexOf('.');
+    if (dot <= 0) return Results.NotFound();
+
+    var url = await galleryStorage.GetUrlAsync(fileName[..dot], fileName[(dot + 1)..]);
+    return Results.Redirect(url);
+}).RequireCors("AllowFrontend");
 app.MapHealthChecks("/health").AllowAnonymous();
 
 // Live-stream proxy (anonymous, same-origin) — matched before the SPA fallback.

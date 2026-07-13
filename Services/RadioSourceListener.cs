@@ -23,10 +23,13 @@ namespace GuildedThorn.com.Services;
 public class RadioSourceListener(
     RadioService radio,
     MongoDbService mongo,
+    S3StorageService storage,
     IConfiguration config,
     PushNotificationService push,
     IHubContext<RadioHub> radioHub,
     ILogger<RadioSourceListener> logger) : BackgroundService {
+
+    private string RecordingsBucket => config["Storage:S3BucketRadio"] ?? "radio-archive";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         var port = config.GetValue<int?>("Radio:SourcePort") ?? 8000;
@@ -97,7 +100,7 @@ public class RadioSourceListener(
         _ = NotifyWentLiveAsync();
 
         var startedAt = DateTime.UtcNow;
-        var (recordingStream, recordingFileName) = TryStartRecording(contentType, startedAt);
+        var (recordingStream, tempPath, recordingFileName) = TryStartRecording(contentType, startedAt);
 
         try {
             var buffer = new byte[16 * 1024];
@@ -122,38 +125,39 @@ public class RadioSourceListener(
 
             if (recordingStream is not null) {
                 await recordingStream.DisposeAsync();
-                await SaveRecordingAsync(recordingFileName!, name, contentType, startedAt, ct);
+                await SaveRecordingAsync(tempPath!, recordingFileName!, name, contentType, startedAt, ct);
             }
 
             logger.LogInformation("Radio source disconnected");
         }
     }
 
-    // Same bytes listeners get, written straight to disk — no transcoding.
-    // Failure here (disk full, permissions, bad config path) must never take
-    // the live broadcast down, so it's isolated from the relay loop above.
-    private (FileStream? stream, string? fileName) TryStartRecording(string contentType, DateTime startedAt) {
+    // Same bytes listeners get, written to a local temp file first — no
+    // transcoding, and no persistent local storage either: the temp file only
+    // exists for the duration of the broadcast + its upload to S3, then gets
+    // deleted (see SaveRecordingAsync). Failure here (disk full, permissions)
+    // must never take the live broadcast down, so it's isolated from the
+    // relay loop above.
+    private (FileStream? stream, string? tempPath, string? fileName) TryStartRecording(string contentType, DateTime startedAt) {
         try {
-            var recordingsDir = config.GetValue<string>("Radio:RecordingsDirectory") ?? "data/radio-recordings";
-            Directory.CreateDirectory(recordingsDir);
-
             var ext = contentType.Contains("ogg", StringComparison.OrdinalIgnoreCase) ? "ogg"
                 : contentType.Contains("aac", StringComparison.OrdinalIgnoreCase) ? "aac"
                 : "mp3";
             var fileName = $"{startedAt:yyyyMMdd-HHmmss}.{ext}";
-            var stream = File.Create(Path.Combine(recordingsDir, fileName));
-            return (stream, fileName);
+            var tempPath = Path.Combine(Path.GetTempPath(), $"guildedthorn-radio-{Guid.NewGuid():N}.{ext}");
+            var stream = File.Create(tempPath);
+            return (stream, tempPath, fileName);
         } catch (Exception ex) {
             logger.LogWarning(ex, "Failed to start recording this broadcast — continuing live-only");
-            return (null, null);
+            return (null, null, null);
         }
     }
 
-    private async Task SaveRecordingAsync(string fileName, string stationName, string contentType,
+    private async Task SaveRecordingAsync(string tempPath, string fileName, string stationName, string contentType,
         DateTime startedAt, CancellationToken ct) {
         try {
-            var recordingsDir = config.GetValue<string>("Radio:RecordingsDirectory") ?? "data/radio-recordings";
-            var sizeBytes = new FileInfo(Path.Combine(recordingsDir, fileName)).Length;
+            var sizeBytes = new FileInfo(tempPath).Length;
+            await storage.UploadFileAsync(RecordingsBucket, fileName, tempPath, contentType);
             var endedAt = DateTime.UtcNow;
 
             var recording = new RadioRecording {
@@ -169,7 +173,9 @@ public class RadioSourceListener(
             logger.LogInformation("Saved radio recording {FileName} ({Duration}s, {Size} bytes)",
                 fileName, recording.DurationSeconds, sizeBytes);
         } catch (Exception ex) {
-            logger.LogWarning(ex, "Failed to save recording metadata for {FileName}", fileName);
+            logger.LogWarning(ex, "Failed to save recording {FileName}", fileName);
+        } finally {
+            try { File.Delete(tempPath); } catch { /* best effort */ }
         }
     }
 

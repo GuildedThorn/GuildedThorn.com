@@ -5,6 +5,16 @@
     "hash": "sha256-d+U+m4mPRFF/BJgCMXJuUY7vPhUx1fFKeF5xaflgOqs="
   },
   {
+    "pname": "AWSSDK.Core",
+    "version": "4.0.100",
+    "hash": "sha256-aMflCVK8mZ5sBBChPaUMT0WjnKFEmBh4beL2tfTzlHM="
+  },
+  {
+    "pname": "AWSSDK.S3",
+    "version": "4.0.100",
+    "hash": "sha256-Im7iYof7NcNq7F2AAkrQ3r14Ej3BHUHuaxYF9XI+mlQ="
+  },
+  {
     "pname": "BCrypt.Net-Next",
     "version": "4.0.3",
     "hash": "sha256-BxXHAjIV2xBuRPUezzC+5jhaHiQhgnqTk1k1ko3D6Ds="

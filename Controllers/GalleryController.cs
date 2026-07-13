@@ -133,12 +133,8 @@ public class GalleryController(MongoDbService mongoDbService, GalleryStorage gal
         var coll = mongoDbService.GetGalleryImageCollection();
         await coll.InsertOneAsync(newImage);
 
-        // save file to disk (rename to id), in the out-of-wwwroot store
-        var savePath = galleryStorage.PathFor(newImage.Id, newImage.FileType);
-        Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
-
-        await using (var stream = new FileStream(savePath, FileMode.Create)) {
-            await file.CopyToAsync(stream);
+        await using (var stream = file.OpenReadStream()) {
+            await galleryStorage.UploadAsync(newImage.Id, newImage.FileType, stream, file.ContentType);
         }
 
         return Ok(newImage);
@@ -153,15 +149,11 @@ public class GalleryController(MongoDbService mongoDbService, GalleryStorage gal
         if (image == null)
             return NotFound(new { message = "Image not found" });
 
-        var filePath = galleryStorage.PathFor(image.Id, image.FileType);
-
         try {
-            if (System.IO.File.Exists(filePath)) {
-                System.IO.File.Delete(filePath);
-            }
+            await galleryStorage.DeleteAsync(image.Id, image.FileType);
         }
         catch (Exception ex) {
-            // If the DB delete succeeded but file delete failed, you may want to log it.
+            // If the DB delete succeeded but object deletion failed, you may want to log it.
             return StatusCode(500, new { message = "Image metadata deleted, but file deletion failed", error = ex.Message });
         }
 

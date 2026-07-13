@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +19,10 @@ public class RadioController(
     RadioService radio,
     IHubContext<RadioHub> radioHub,
     MongoDbService mongo,
+    S3StorageService storage,
     IConfiguration config) : ControllerBase {
+
+    private string RecordingsBucket => config["Storage:S3BucketRadio"] ?? "radio-archive";
 
     // Replaces Icecast's status-json.xsl — the SPA polls this for on-air state
     // and "now playing".
@@ -108,9 +110,10 @@ public class RadioController(
         return Ok(new { items = result, totalPages });
     }
 
-    // id is only ever used to look up a Mongo doc — the actual file path comes
-    // from that doc's (server-controlled) FileName, never from this parameter
-    // directly, so there's no path-traversal surface here.
+    // id is only ever used to look up a Mongo doc — the actual object key
+    // comes from that doc's (server-controlled) FileName, never from this
+    // parameter directly. Redirects straight to SeaweedFS instead of
+    // proxying the bytes through this app.
     [AllowAnonymous]
     [HttpGet("recordings/{id}/stream")]
     public async Task<IActionResult> StreamRecording(string id) {
@@ -119,10 +122,7 @@ public class RadioController(
             .FirstOrDefaultAsync();
         if (recording is null) return NotFound();
 
-        var recordingsDir = config.GetValue<string>("Radio:RecordingsDirectory") ?? "data/radio-recordings";
-        var filePath = Path.Combine(recordingsDir, recording.FileName);
-        if (!System.IO.File.Exists(filePath)) return NotFound();
-
-        return PhysicalFile(Path.GetFullPath(filePath), recording.ContentType, enableRangeProcessing: true);
+        var url = await storage.GetPresignedUrlAsync(RecordingsBucket, recording.FileName, TimeSpan.FromMinutes(30));
+        return Redirect(url);
     }
 }

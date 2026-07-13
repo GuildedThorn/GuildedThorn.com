@@ -108,23 +108,8 @@
               default = null;
               description = ''
                 EnvironmentFile with secrets (Jwt__Key, MongoDB__ConnectionString,
-                RabbitMQ__Password, Spotify__ClientSecret, ...). Use sops-nix or
-                agenix to provision it.
-              '';
-            };
-
-            recordingsDirectory = lib.mkOption {
-              type = lib.types.nullOr lib.types.path;
-              default = null;
-              description = ''
-                Where radio broadcasts get recorded (see RadioSourceListener).
-                Left null, recordings live under the service's own state
-                directory. Set this to point somewhere else entirely — e.g. a
-                TrueNAS share mounted at /mnt/truenas/radio — the mount itself
-                is a host-level concern (your NixOS fileSystems config), not
-                something this flake manages; this option just tells the
-                service where to write and grants it access via
-                ReadWritePaths.
+                RabbitMQ__Password, Spotify__ClientSecret, Storage__S3AccessKey,
+                Storage__S3SecretKey, ...). Use sops-nix or agenix to provision it.
               '';
             };
           };
@@ -139,29 +124,24 @@
               environment = {
                 ASPNETCORE_URLS = "http://127.0.0.1:${toString cfg.port}";
                 ASPNETCORE_ENVIRONMENT = "Production";
-              }
-              // lib.optionalAttrs (cfg.recordingsDirectory != null) {
-                Radio__RecordingsDirectory = toString cfg.recordingsDirectory;
               };
 
               # The app resolves wwwroot/ and Resources/config.json relative to
-              # its working directory, and gallery uploads must be writable, so
-              # assemble a writable content root in the state directory. Copying
-              # never deletes, so uploaded gallery images survive redeploys.
+              # its working directory, so assemble a writable content root in
+              # the state directory. Gallery uploads and radio recordings live
+              # in SeaweedFS (S3-compatible, see S3StorageService) rather than
+              # here, so this no longer needs to preserve anything across
+              # redeploys beyond config.json — copying never deletes, purely
+              # out of caution.
               preStart = ''
-                mkdir -p "$STATE_DIRECTORY/wwwroot/images/gallery" "$STATE_DIRECTORY/Resources"
+                mkdir -p "$STATE_DIRECTORY/wwwroot" "$STATE_DIRECTORY/Resources"
                 # Drop stale top-level build files (e.g. a sitemap.xml that's since
-                # moved to a controller) so they can't shadow app routes. Only the
-                # top level — subdirectories are left alone so uploaded avatars
-                # (images/avatars) survive redeploys.
+                # moved to a controller) so they can't shadow app routes.
                 find "$STATE_DIRECTORY/wwwroot" -maxdepth 1 -type f -delete
                 cp -r --no-preserve=mode,ownership ${appDir}/wwwroot/. "$STATE_DIRECTORY/wwwroot/"
                 if [ ! -e "$STATE_DIRECTORY/Resources/config.json" ]; then
                   cp --no-preserve=mode,ownership ${appDir}/Resources/config.json "$STATE_DIRECTORY/Resources/"
                 fi
-              ''
-              + lib.optionalString (cfg.recordingsDirectory == null) ''
-                mkdir -p "$STATE_DIRECTORY/data/radio-recordings"
               '';
 
               serviceConfig = {
@@ -174,9 +154,6 @@
               }
               // lib.optionalAttrs (cfg.environmentFile != null) {
                 EnvironmentFile = cfg.environmentFile;
-              }
-              // lib.optionalAttrs (cfg.recordingsDirectory != null) {
-                ReadWritePaths = [ (toString cfg.recordingsDirectory) ];
               };
             };
           };

@@ -12,6 +12,9 @@
 
   <ItemGroup>
     <PackageReference Include="AspNet.Security.OAuth.Spotify" Version="9.4.0" />
+    <!-- S3-compatible object storage client — points at a self-hosted
+         SeaweedFS S3 endpoint, not AWS. See Services/S3StorageService.cs. -->
+    <PackageReference Include="AWSSDK.S3" Version="4.0.100" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <!-- WebAuthn / FIDO2 (YubiKey). Fido2.AspNet provides the AddFido2() DI
          extension and pulls in the core Fido2 package. Verify the latest 4.x. -->
