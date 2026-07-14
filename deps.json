@@ -45,6 +45,16 @@
     "hash": "sha256-upadIQMUYlznjb/0ZTSpjjkCscSF9NrikGjbP88f5cU="
   },
   {
+    "pname": "LibGit2Sharp",
+    "version": "0.31.0",
+    "hash": "sha256-AvvsA3dsDbcGNjpxWXO5F1iw8bhrctaWQ0MD2oJSyJA="
+  },
+  {
+    "pname": "LibGit2Sharp.NativeBinaries",
+    "version": "2.0.323",
+    "hash": "sha256-0qFqyNC0u05UF+DJ/LNvng5Sur1ryci+wIEGhVU/7rE="
+  },
+  {
     "pname": "libsodium",
     "version": "1.0.20.1",
     "hash": "sha256-wd/z31FRbcaVGrogSNVjefEYWjNxTGzQd04DOlY1PFE="

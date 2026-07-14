@@ -181,6 +181,7 @@ services.AddSingleton<RadioService>();
 services.AddSingleton<PushNotificationService>();
 services.AddSingleton<JwtTokenService>();
 services.AddSingleton<DonationService>();
+services.AddSingleton<KnowledgeBaseSyncEngine>();
 
 // ---- WebAuthn / FIDO2 (YubiKey) ----
 // RP ID must be the site's registrable domain (no scheme/port); Origins must be
@@ -195,6 +196,7 @@ services.AddFido2(options => {
     options.Origins = new HashSet<string>(origins);
 });
 services.AddHostedService<RadioSourceListener>(); // Mixxx → backend source server (127.0.0.1:8000)
+services.AddHostedService<KnowledgeBaseSyncService>(); // polls github.com/GuildedThorn/knowledge-base every KnowledgeBase:PollIntervalMinutes
 
 // ---- Forwarded headers (real client IP/scheme behind a reverse proxy) ----
 // So rate limiting keys on the true client IP and logs/redirects use the right
@@ -364,6 +366,8 @@ var spaRoutes = new[] {
     "/colophon",
     "/blog/pages",
     "/blog/pages/{id}",
+    "/kb",
+    "/kb/{slug}",
     "/gallery/images",
     "/gallery/images/{id}",
     "/settings",

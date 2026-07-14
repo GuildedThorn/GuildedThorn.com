@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   FaBook,
+  FaBookOpen,
   FaCode,
   FaEnvelope,
   FaHeart,
@@ -49,6 +50,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: "/projects", label: "Projects", icon: <FaCode className="text-base" /> },
       { to: "/blog/pages", label: "Blog", icon: <FaScroll className="text-base" /> },
+      { to: "/kb", label: "Knowledge Base", icon: <FaBookOpen className="text-base" /> },
       { to: "/gallery/images/", label: "Gallery", icon: <FaImages className="text-base" /> },
       { to: "/net", label: "Network", icon: <PiNetwork className="text-base" /> },
       { to: "/colophon", label: "How it's built", icon: <FaServer className="text-base" /> },

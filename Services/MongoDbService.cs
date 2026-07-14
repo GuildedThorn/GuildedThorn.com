@@ -72,4 +72,12 @@ public class MongoDbService {
     public IMongoCollection<RadioRecording> GetRadioRecordingsCollection() {
         return _database.GetCollection<RadioRecording>("RadioRecordings");
     }
+
+    public IMongoCollection<KnowledgeBaseNote> GetKnowledgeBaseNoteCollection() {
+        return _database.GetCollection<KnowledgeBaseNote>("KnowledgeBaseNotes");
+    }
+
+    public IMongoCollection<KnowledgeBaseSyncState> GetKnowledgeBaseSyncStateCollection() {
+        return _database.GetCollection<KnowledgeBaseSyncState>("KnowledgeBaseSyncState");
+    }
 }

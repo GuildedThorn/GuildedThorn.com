@@ -31,6 +31,8 @@ const ThornNet = lazy(() => import('@pages/ThornNet.tsx'));
 const BlogLayout = lazy(() => import('@layouts/BlogLayout.tsx'));
 const BlogList = lazy(() => import('@components/Blog/BlogList'));
 const BlogPost = lazy(() => import('@components/Blog/BlogPost.tsx'));
+const KnowledgeBaseLayout = lazy(() => import('@layouts/KnowledgeBaseLayout.tsx'));
+const KnowledgeBaseNote = lazy(() => import('@components/KnowledgeBase/KnowledgeBaseNote.tsx'));
 const BlogUpload = lazy(() => import('@pages/BlogUpload.tsx'));
 const GalleryUpload = lazy(() => import('@pages/GalleryUpload.tsx'));
 const GalleryList = lazy(() => import('@components/Gallery/GalleryList.tsx'));
@@ -83,6 +85,12 @@ export const router = createBrowserRouter(
             <Route path="blog/pages" element={<BlogLayout />}>
                 <Route index element={<BlogList />} />
                 <Route path=":id" element={<BlogPost />} />
+            </Route>
+            <Route path="kb" element={<KnowledgeBaseLayout />}>
+                {/* Home renders the vault's own "Welcome" note — the sidebar's
+                    folder hierarchy is the primary way to browse from there. */}
+                <Route index element={<KnowledgeBaseNote slug="welcome" />} />
+                <Route path=":slug" element={<KnowledgeBaseNote />} />
             </Route>
             <Route path="gallery/images" element={<GalleryLayout />}>
                 {/* The carousel handles both the landing view and deep-links: a
