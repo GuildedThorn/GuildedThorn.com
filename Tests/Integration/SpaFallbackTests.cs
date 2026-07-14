@@ -25,9 +25,14 @@ public sealed class SpaFallbackTests {
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder => {
             builder.UseEnvironment("Testing");
             builder.ConfigureServices(services => {
+                // Both are IHostedServices that reach outside the test sandbox
+                // (Mongo, the public knowledge-base repo) — this fixture never
+                // supplies a real MongoDB__ConnectionString, so leaving either
+                // registered fails host startup with a null connection string.
                 foreach (var d in services
                     .Where(s => s.ServiceType == typeof(IHostedService)
-                        && s.ImplementationType == typeof(RadioSourceListener))
+                        && (s.ImplementationType == typeof(RadioSourceListener)
+                            || s.ImplementationType == typeof(KnowledgeBaseSyncService)))
                     .ToList()) {
                     services.Remove(d);
                 }

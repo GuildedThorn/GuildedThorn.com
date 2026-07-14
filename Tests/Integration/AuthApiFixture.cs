@@ -51,9 +51,12 @@ public sealed class AuthApiFixture : IAsyncLifetime {
         Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => {
             builder.UseEnvironment("Testing");
             builder.ConfigureTestServices(services => {
-                // The Mixxx source listener connects to 127.0.0.1:8000 — drop it.
+                // The Mixxx source listener connects to 127.0.0.1:8000, and the
+                // knowledge-base sync clones the real public GitHub repo — drop
+                // both; these auth tests have no business triggering either.
                 foreach (var d in services
-                    .Where(s => s.ImplementationType == typeof(RadioSourceListener))
+                    .Where(s => s.ImplementationType == typeof(RadioSourceListener)
+                        || s.ImplementationType == typeof(KnowledgeBaseSyncService))
                     .ToList()) {
                     services.Remove(d);
                 }
