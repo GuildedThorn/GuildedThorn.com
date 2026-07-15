@@ -14,7 +14,7 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/geist-mono": "^5.2.8",
-    "@microsoft/signalr": "^8.0.17",
+    "@microsoft/signalr": "^10.0.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.2",
