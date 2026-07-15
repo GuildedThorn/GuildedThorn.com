@@ -37,7 +37,7 @@
          apply since no persistence store is configured. -->
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.5.0" />
     <PackageReference Include="OpenIddict.Client.AspNetCore" Version="7.5.0" />
-    <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
