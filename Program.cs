@@ -195,6 +195,7 @@ services.AddFido2(options => {
         ?? new[] { "https://localhost:5173" };
     options.Origins = new HashSet<string>(origins);
 });
+services.AddSingleton<StageRegistry>(); // SurroundStage multiplayer room state
 services.AddHostedService<RadioSourceListener>(); // Mixxx → backend source server (127.0.0.1:8000)
 services.AddHostedService<KnowledgeBaseSyncService>(); // polls github.com/GuildedThorn/knowledge-base every KnowledgeBase:PollIntervalMinutes
 
@@ -325,6 +326,7 @@ app.UseAuthorization();
 // ---- Hubs & Controllers ----
 app.MapHub<ChatHub>("/chathub").RequireCors("AllowFrontend");
 app.MapHub<RadioHub>("/radiohub").RequireCors("AllowFrontend");
+app.MapHub<StageHub>("/stagehub").RequireCors("AllowFrontend"); // SurroundStage multiplayer relay
 app.MapControllers().RequireCors("AllowFrontend");
 
 // Gallery images now live in SeaweedFS, not a local static-files mapping —
