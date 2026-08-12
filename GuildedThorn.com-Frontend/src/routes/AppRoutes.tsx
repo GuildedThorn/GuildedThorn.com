@@ -45,6 +45,7 @@ const Projects = lazy(() => import('@pages/Projects.tsx'));
 const Inbox = lazy(() => import('@pages/Inbox.tsx'));
 const NotFound = lazy(() => import('@pages/NotFound.tsx'));
 const Uses = lazy(() => import('@pages/Uses.tsx')); // /uses page — delete this line + its <Route> to remove
+const StageConnect = lazy(() => import('@pages/StageConnect.tsx'));
 
 
 // Old per-tool URLs (e.g. /tools/regex) land on the matching section of /tools
@@ -69,6 +70,7 @@ export const router = createBrowserRouter(
             <Route path="stream" element={<Stream />} />
             <Route path="donate" element={<Donate />} />
             <Route path="u/:username" element={<Profile />} />
+            <Route path="stage/connect" element={<StageConnect />} />
 
             <Route path="tools" element={<Tools />} />
             {/* Old per-tool URLs redirect to their section on the combined page */}

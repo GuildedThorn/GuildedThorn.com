@@ -14,6 +14,10 @@ namespace GuildedThorn.com.Services;
 // AuthController.GenerateJwtToken — keep the two in sync.
 public class JwtTokenService(SymmetricSecurityKey key, IConfiguration config) {
 
+    private string Issuer => config["Jwt:Issuer"]!;
+    private string Audience => config["Jwt:Audience"]!;
+    private string StageAudience => $"{Audience}:surroundstage";
+
     public string Generate(User user) {
         var claims = new List<Claim> {
             new(JwtRegisteredClaimNames.Name, user.Username),
@@ -40,5 +44,47 @@ public class JwtTokenService(SymmetricSecurityKey key, IConfiguration config) {
             SameSite = SameSiteMode.Strict,
             Expires = DateTime.UtcNow.AddDays(1),
         });
+    }
+
+    /// <summary>
+    /// A short-lived, narrow credential for a SurroundStage room. It cannot
+    /// authenticate to the website APIs because it has a separate audience
+    /// and an explicit stage-only scope.
+    /// </summary>
+    public string GenerateStageToken(User user, TimeSpan? lifetime = null) {
+        var claims = new List<Claim> {
+            new(JwtRegisteredClaimNames.Name, user.Username),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(ClaimTypes.Role, user.Role),
+            new("scope", "surroundstage"),
+        };
+        var token = new JwtSecurityToken(
+            issuer: Issuer,
+            audience: StageAudience,
+            claims: claims,
+            notBefore: DateTime.UtcNow.AddSeconds(-5),
+            expires: DateTime.UtcNow.Add(lifetime ?? TimeSpan.FromMinutes(10)),
+            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public ClaimsPrincipal? ValidateStageToken(string token) {
+        if (string.IsNullOrWhiteSpace(token)) return null;
+        try {
+            return new JwtSecurityTokenHandler().ValidateToken(token, new TokenValidationParameters {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = Issuer,
+                ValidAudience = StageAudience,
+                IssuerSigningKey = key,
+                ClockSkew = TimeSpan.FromSeconds(15),
+                NameClaimType = JwtRegisteredClaimNames.Name,
+                RoleClaimType = ClaimTypes.Role,
+            }, out _);
+        } catch {
+            return null;
+        }
     }
 }
