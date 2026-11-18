@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useConsent } from "@components/ConsentContext";
+import { socials } from "@lib/socials";
 
 const explore = [
     { to: "/stream", label: "Stream" },
@@ -37,6 +38,22 @@ export default function Footer() {
                             My corner of the internet — projects, music, streams, and the occasional
                             experiment.
                         </p>
+                        <ul className="flex items-center gap-3" aria-label="Social media">
+                            {socials.map((s) => (
+                                <li key={s.label}>
+                                    <a
+                                        href={s.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={s.label}
+                                        title={s.label}
+                                        className="grid h-9 w-9 place-items-center rounded-lg bg-muted text-lg text-muted-foreground transition-colors hover:text-primary"
+                                    >
+                                        {s.icon}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
 
                     <nav aria-label="Explore">
