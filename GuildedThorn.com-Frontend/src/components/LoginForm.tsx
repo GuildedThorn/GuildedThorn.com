@@ -1,5 +1,5 @@
 import React, { FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { KeyRound } from "lucide-react";
 import { Button } from "@components/ui/Button";
 import TextInput from "@components/ui/TextInput";
@@ -15,7 +15,12 @@ const LoginForm: React.FC = () => {
     const [submitting, setSubmitting] = useState(false);
     const [keyBusy, setKeyBusy] = useState(false);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { refresh } = useAuth();
+    const requestedReturn = searchParams.get("returnTo") ?? "/";
+    const returnTo = requestedReturn.startsWith("/") && !requestedReturn.startsWith("//")
+        ? requestedReturn
+        : "/";
 
     const handleKeyLogin = async () => {
         setError(null);
@@ -24,7 +29,7 @@ const LoginForm: React.FC = () => {
             // No username → passwordless with a discoverable key. (The optional
             // username field above scopes it to one account as a 2nd factor.)
             await loginWithSecurityKey(username.trim() || undefined);
-            navigate("/");
+            navigate(returnTo);
             await refresh();
         } catch (err) {
             setError(
@@ -65,7 +70,7 @@ const LoginForm: React.FC = () => {
                         return; // finally resets `submitting`
                     }
                 }
-                navigate("/");
+                navigate(returnTo);
                 await refresh();      // <— this updates the AuthContext
             } else {
                 setError("Login failed. Check your username and password.");

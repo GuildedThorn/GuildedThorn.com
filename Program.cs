@@ -180,6 +180,7 @@ services.AddSingleton<ChatModerationService>();
 services.AddSingleton<RadioService>();
 services.AddSingleton<PushNotificationService>();
 services.AddSingleton<JwtTokenService>();
+services.AddSingleton<StageDeviceCodeService>();
 services.AddSingleton<DonationService>();
 services.AddSingleton<KnowledgeBaseSyncEngine>();
 
@@ -237,6 +238,15 @@ services.AddRateLimiter(options => {
             _ => new FixedWindowRateLimiterOptions {
                 PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(10),
+                QueueLimit = 0,
+            }));
+
+    options.AddPolicy("stage", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             }));
 
@@ -377,6 +387,7 @@ var spaRoutes = new[] {
     "/inbox",
     "/guestbook",
     "/radio",
+    "/stage/connect",
     "/blog/upload",
     "/gallery/upload",
 };

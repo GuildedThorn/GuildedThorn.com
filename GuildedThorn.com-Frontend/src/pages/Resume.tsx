@@ -33,11 +33,11 @@ type Job = {
 const experience: Job[] = [
   {
     company: "White Castle",
-    employment: "Full-time · 2 yrs 5 mos",
+    employment: "Full-time",
     roles: [
       {
         title: "Manager",
-        period: "Oct 2025 – Present · 9 mos",
+        period: "Oct 2025 – Present",
         points: [
           "Run daily restaurant operations and lead the crew across shifts — scheduling, training, and service quality.",
           "Oversee cash handling, inventory, and food-safety standards in a high-volume quick-service environment.",
