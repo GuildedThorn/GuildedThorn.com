@@ -180,6 +180,7 @@ services.AddSingleton<ChatModerationService>();
 services.AddSingleton<RadioService>();
 services.AddSingleton<PushNotificationService>();
 services.AddSingleton<JwtTokenService>();
+services.AddSingleton<StageDeviceCodeService>();
 services.AddSingleton<DonationService>();
 services.AddSingleton<KnowledgeBaseSyncEngine>();
 
@@ -195,6 +196,7 @@ services.AddFido2(options => {
         ?? new[] { "https://localhost:5173" };
     options.Origins = new HashSet<string>(origins);
 });
+services.AddSingleton<StageRegistry>(); // SurroundStage multiplayer room state
 services.AddHostedService<RadioSourceListener>(); // Mixxx → backend source server (127.0.0.1:8000)
 services.AddHostedService<KnowledgeBaseSyncService>(); // polls github.com/GuildedThorn/knowledge-base every KnowledgeBase:PollIntervalMinutes
 
@@ -236,6 +238,15 @@ services.AddRateLimiter(options => {
             _ => new FixedWindowRateLimiterOptions {
                 PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(10),
+                QueueLimit = 0,
+            }));
+
+    options.AddPolicy("stage", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             }));
 
@@ -325,6 +336,7 @@ app.UseAuthorization();
 // ---- Hubs & Controllers ----
 app.MapHub<ChatHub>("/chathub").RequireCors("AllowFrontend");
 app.MapHub<RadioHub>("/radiohub").RequireCors("AllowFrontend");
+app.MapHub<StageHub>("/stagehub").RequireCors("AllowFrontend"); // SurroundStage multiplayer relay
 app.MapControllers().RequireCors("AllowFrontend");
 
 // Gallery images now live in SeaweedFS, not a local static-files mapping —
@@ -375,6 +387,7 @@ var spaRoutes = new[] {
     "/inbox",
     "/guestbook",
     "/radio",
+    "/stage/connect",
     "/blog/upload",
     "/gallery/upload",
 };

@@ -59,4 +59,23 @@ public class JwtTokenServiceTests {
         var hours = (jwt.ValidTo - DateTime.UtcNow).TotalHours;
         Assert.InRange(hours, 23, 25);
     }
+
+    [Fact]
+    public void GenerateStageToken_IsShortLivedAndStageScoped() {
+        var service = MakeService();
+        var token = service.GenerateStageToken(MakeUser());
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+
+        Assert.Equal("test-audience:surroundstage", jwt.Audiences.Single());
+        Assert.Contains(jwt.Claims, c => c.Type == "scope" && c.Value == "surroundstage");
+        Assert.DoesNotContain(jwt.Claims, c => c.Type == "permissions");
+        Assert.InRange((jwt.ValidTo - DateTime.UtcNow).TotalMinutes, 9, 11);
+        Assert.Equal("thorn", service.ValidateStageToken(token)?.Identity?.Name);
+    }
+
+    [Fact]
+    public void WebsiteSessionToken_IsRejectedAsAStageToken() {
+        var service = MakeService();
+        Assert.Null(service.ValidateStageToken(service.Generate(MakeUser())));
+    }
 }
